@@ -1,0 +1,4 @@
+# Udev rule for GAMDIAS CHIONE P3 Cooler (AEOLUS BOX USB HID)
+# VID: 0x1B80, PID: 0xB522
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1b80", ATTRS{idProduct}=="b522", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1b80", ATTR{idProduct}=="b522", MODE="0660", GROUP="plugdev", TAG+="uaccess"

@@ -1,0 +1,13 @@
+[Unit]
+Description=GAMDIAS CHIONE P3 Cooler Display Daemon
+After=graphical.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/dhyanesh/dev/chionecast
+ExecStart=/home/dhyanesh/dev/chionecast/venv/bin/python /home/dhyanesh/dev/chionecast/chione_cli.py --theme dual --interval 1.0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
