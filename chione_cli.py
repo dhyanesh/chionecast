@@ -124,6 +124,7 @@ def main():
     parser.add_argument("--gif", type=str, help="Play an animated GIF")
     parser.add_argument("--interval", type=float, default=1.0, help="Refresh interval in seconds (default: 1.0)")
     parser.add_argument("--snapshot", type=str, help="Render and save a test snapshot to PNG without sending to device")
+    parser.add_argument("--config-only", action="store_true", help="Only set rotation/brightness and exit without starting monitor")
     parser.add_argument("--daemon", action="store_true", help="Run continuously monitoring system telemetry")
 
     args = parser.parse_args()
@@ -153,7 +154,7 @@ def main():
             show_static_image(dev, args.image)
         elif args.gif:
             play_gif(dev, args.gif)
-        elif args.daemon or (not args.image and not args.gif and args.rotate is None and args.brightness is None):
+        elif not args.config_only:
             run_monitor(dev, theme=args.theme, interval=args.interval)
     finally:
         dev.close()
