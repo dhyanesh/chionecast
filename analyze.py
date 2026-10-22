@@ -105,13 +105,17 @@ def disassemble_clean(rva, max_len=4000):
             i += 4
             lines.append(f"0x{off:04x}: br -> 0x{off + 5 + t:04x}")
         elif op == 0xfe:
-            op2 = code[i]
-            i += 1
-            lines.append(f"0x{off:04x}: fe.{op2:02x}")
+            if i < len(code):
+                op2 = code[i]
+                i += 1
+                lines.append(f"0x{off:04x}: fe.{op2:02x}")
+            else:
+                lines.append(f"0x{off:04x}: fe")
         else:
             lines.append(f"0x{off:04x}: op_0x{op:02x}")
     return lines
 
-print("=== USB_LCDrgb565_PrintData MoveNext ===")
-for l in disassemble_clean(0x2e8e0):
-    print(" ", l)
+if __name__ == "__main__":
+    print("=== USB_LCDrgb565_PrintData MoveNext ===")
+    for l in disassemble_clean(0x2e8e0):
+        print(" ", l)

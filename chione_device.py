@@ -163,18 +163,37 @@ class ChioneDevice:
         else:
             raise RuntimeError("Device is not open")
 
+    def init_stream(self) -> bool:
+        """
+        Puts the LCD into stream reception mode (USB_81H_I01 / USB_LCDrgb565_init).
+        Packet: [0x00, 0x81, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7D]
+        """
+        packet = [0x00, 0x81, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        packet[8] = compute_checksum(packet)
+        res = self.send_feature_report(packet)
+        time.sleep(0.05)
+        return res >= 0
+
     def set_config(self, rotation_deg: int = 0, brightness: int = 8) -> bool:
         """
         Sets screen orientation (0, 90, 180, 270 degrees) and brightness (1..8).
+        Sends wake command first, pauses, then applies rotation and brightness.
         """
         rot_map = {0: 0, 90: 1, 180: 2, 270: 3}
         rot_val = rot_map.get(rotation_deg, 0)
         bri_val = max(1, min(8, brightness))
 
+        # 1. Wake packet (zeros)
+        wake = [0x00, 0x81, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        wake[8] = compute_checksum(wake)
+        self.send_feature_report(wake)
+        time.sleep(0.1)
+
+        # 2. Config packet
         packet = [0x00, 0x81, 0x04, rot_val, bri_val, 0x00, 0x00, 0x00, 0x00]
         packet[8] = compute_checksum(packet)
-
         res = self.send_feature_report(packet)
+        time.sleep(0.05)
         return res >= 0
 
     def send_frame(self, rgb565_data: bytes):

@@ -65,6 +65,7 @@ def run_monitor(dev: ChioneDevice, theme: str = "dual", interval: float = 1.0):
     renderer = DisplayRenderer()
     print(f"Starting hardware monitor with theme '{theme}' (refresh interval: {interval}s)...")
 
+    frame_count = 0
     while running:
         metrics = collector.get_metrics()
         if theme == "cyberpunk":
@@ -76,6 +77,9 @@ def run_monitor(dev: ChioneDevice, theme: str = "dual", interval: float = 1.0):
 
         try:
             dev.display_image(frame)
+            frame_count += 1
+            print(f"Frame {frame_count} sent | CPU {metrics.cpu_percent:.0f}% {metrics.cpu_temp:.0f}°C | "
+                  f"GPU {metrics.gpu_percent:.0f}% {metrics.gpu_temp:.0f}°C | RAM {metrics.ram_percent:.0f}%")
         except Exception as e:
             print(f"Error streaming frame: {e}")
             break
@@ -136,12 +140,13 @@ def main():
     dev.open()
 
     try:
-        # Configuration settings
-        if args.rotate is not None or args.brightness is not None:
-            rot = args.rotate if args.rotate is not None else 0
-            bri = args.brightness if args.brightness is not None else 8
-            print(f"Configuring LCD: Rotation = {rot}°, Brightness = {bri}")
-            dev.set_config(rotation_deg=rot, brightness=bri)
+        # Always send config to wake/init the display, using provided or default values
+        rot = args.rotate if args.rotate is not None else 0
+        bri = args.brightness if args.brightness is not None else 8
+        print(f"Configuring LCD: Rotation = {rot}°, Brightness = {bri}")
+        dev.set_config(rotation_deg=rot, brightness=bri)
+        print("Initializing LCD stream mode...")
+        dev.init_stream()
 
         # Mode execution
         if args.image:
