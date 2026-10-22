@@ -122,4 +122,5 @@ systemctl --user status chione-display.service
 ---
 
 ## Documentation
-For complete technical details, reverse engineering notes, and protocol packet definitions, see [REVERSE_ENGINEERING_AND_PROTOCOL.md](file:///home/dhyanesh/dev/chionecast/REVERSE_ENGINEERING_AND_PROTOCOL.md).
+- **[Display Themes Gallery & Reference (docs/themes.md)](file:///home/dhyanesh/dev/chionecast/docs/themes.md):** Full visual catalog of all 8 built-in themes, visual styles, and preview screenshots.
+- **[Reverse Engineering & Protocol Specification](file:///home/dhyanesh/dev/chionecast/REVERSE_ENGINEERING_AND_PROTOCOL.md):** Complete technical breakdown of the USB HID protocol, packet structures, checksum algorithms, and AEOLUS Box reverse engineering findings.

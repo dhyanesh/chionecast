@@ -50,6 +50,9 @@ chmod 644 "${BUILD_DIR}/usr/lib/systemd/user/chionecast.service"
 # 5. Documentation
 cp "${SCRIPT_DIR}/README.md" "${BUILD_DIR}/usr/share/doc/chionecast/"
 cp "${SCRIPT_DIR}/REVERSE_ENGINEERING_AND_PROTOCOL.md" "${BUILD_DIR}/usr/share/doc/chionecast/"
+if [ -d "${SCRIPT_DIR}/docs" ]; then
+    cp -r "${SCRIPT_DIR}/docs" "${BUILD_DIR}/usr/share/doc/chionecast/"
+fi
 
 # 6. Debian control file
 cat << EOF > "${BUILD_DIR}/DEBIAN/control"
