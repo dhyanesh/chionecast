@@ -70,6 +70,36 @@ chionecast --rotate 180 --theme dual
 
 ---
 
+### Configuring Displayed Metrics (Theme-Independent)
+
+You can assign any metric to any slot on the display regardless of which theme you use:
+- `--primary <cpu|gpu|ram|vram>`: Assigns primary metric (left card, outer ring, or big number)
+- `--secondary <cpu|gpu|ram|vram>`: Assigns secondary metric (right card, inner ring)
+- `--aux <ram|vram|none>`: Assigns bottom badge metric
+- `--unit <C|F>`: Sets temperature unit (°C or °F)
+
+```bash
+# Display GPU as primary and CPU as secondary
+./venv/bin/python chione_cli.py --primary gpu --secondary cpu
+
+# Monitor CPU and RAM with Fahrenheit temperatures
+./venv/bin/python chione_cli.py --primary cpu --secondary ram --unit F
+```
+
+### Persistent Configuration & Automatic Bootup
+
+CHIONECAST saves user preferences to `~/.config/chionecast/config.json`. The systemd bootup service reads this configuration automatically on startup without requiring any service file modifications.
+
+```bash
+# Save your preferred setup (e.g. 180° rotation, reactor theme, GPU primary)
+./venv/bin/python chione_cli.py --rotate 180 --theme reactor --primary gpu --secondary cpu --save-config --config-only
+
+# View current configuration
+./venv/bin/python chione_cli.py --show-config
+```
+
+---
+
 ## Command Reference
 
 ### Set Screen Rotation & Brightness

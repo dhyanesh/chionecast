@@ -23,6 +23,7 @@ install:
 	install -m 644 chione_device.py $(DESTDIR)$(PREFIX)/lib/chionecast/chione_device.py
 	install -m 644 display_renderer.py $(DESTDIR)$(PREFIX)/lib/chionecast/display_renderer.py
 	install -m 644 system_stats.py $(DESTDIR)$(PREFIX)/lib/chionecast/system_stats.py
+	install -m 644 config_manager.py $(DESTDIR)$(PREFIX)/lib/chionecast/config_manager.py
 	install -d $(DESTDIR)$(PREFIX)/share/chionecast
 	cp -r assets $(DESTDIR)$(PREFIX)/share/chionecast/
 	install -d $(DESTDIR)$(PREFIX)/bin

@@ -115,232 +115,274 @@ class DisplayRenderer:
         self._frame_cache[cache_key] = loaded_frames
         return loaded_frames
 
-    def render_hud_overlay(self, bg_image: Image.Image, metrics: SystemMetrics) -> Image.Image:
+    def render_hud_overlay(
+        self,
+        bg_image: Image.Image,
+        metrics: SystemMetrics,
+        primary_metric: str = "cpu",
+        secondary_metric: str = "gpu",
+        aux_metric: str = "ram",
+        temp_unit: str = "C",
+    ) -> Image.Image:
         """
         Composites telemetry HUD onto a 240x240 background frame.
-        Usage percentages are dominant, temperatures are secondary.
+        Usage percentages are dominant, secondary metrics are styled below.
+        Supports any arbitrary metric assignments (CPU, GPU, RAM, VRAM).
         """
+        p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
+        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+
         bg = bg_image.convert("RGBA") if bg_image.mode != "RGBA" else bg_image.copy()
         overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
 
-        # Left frosted card: CPU
+        # Left frosted card: Primary Metric
         draw.rounded_rectangle(
             [20, 58, 114, 154],
             radius=10,
             fill=(10, 16, 26, 185),
-            outline=(0, 200, 255, 140),
-            width=1
+            outline=(*p_col[:3], 140),
+            width=1,
         )
 
-        # Right frosted card: GPU
+        # Right frosted card: Secondary Metric
         draw.rounded_rectangle(
             [126, 58, 220, 154],
             radius=10,
             fill=(10, 26, 18, 185),
-            outline=(0, 230, 120, 140),
-            width=1
+            outline=(*s_col[:3], 140),
+            width=1,
         )
 
-        # Bottom badge: RAM & Clock
+        # Bottom badge: Auxiliary Metric & Clock
         draw.rounded_rectangle(
-            [58, 168, 182, 198],
+            [54, 168, 186, 198],
             radius=8,
             fill=(12, 16, 22, 195),
             outline=(45, 55, 75, 140),
-            width=1
+            width=1,
         )
 
         f_title = _get_font(13)
         f_large = _get_font(28)
         f_small = _get_font(12)
 
-        # CPU Content (Cyan)
-        draw.text((34, 66), "CPU", fill=(0, 210, 255), font=f_title)
-        draw.text((30, 84), f"{metrics.cpu_percent:.0f}%", fill=(255, 255, 255), font=f_large)
-        draw.text((34, 126), f"{metrics.cpu_temp:.0f}°C", fill=(160, 200, 230), font=f_small)
+        # Primary Metric Card (Left)
+        draw.text((34, 66), p_label, fill=p_col, font=f_title)
+        draw.text((28, 84), f"{p_val:.0f}%", fill=(255, 255, 255), font=f_large)
+        draw.text((32, 126), p_sub, fill=(180, 210, 235), font=f_small)
 
-        # GPU Content (Emerald Green)
-        draw.text((140, 66), "GPU", fill=(0, 230, 120), font=f_title)
-        draw.text((136, 84), f"{metrics.gpu_percent:.0f}%", fill=(255, 255, 255), font=f_large)
-        draw.text((140, 126), f"{metrics.gpu_temp:.0f}°C", fill=(160, 230, 190), font=f_small)
+        # Secondary Metric Card (Right)
+        draw.text((140, 66), s_label, fill=s_col, font=f_title)
+        draw.text((134, 84), f"{s_val:.0f}%", fill=(255, 255, 255), font=f_large)
+        draw.text((138, 126), s_sub, fill=(180, 230, 205), font=f_small)
 
-        # Bottom Badge Content: RAM and Time
+        # Bottom Badge Content: Aux and Clock
         now = datetime.datetime.now().strftime("%H:%M")
-        draw.text((68, 175), f"RAM {metrics.ram_percent:.0f}%", fill=(180, 190, 210), font=f_small)
-        draw.text((136, 175), now, fill=(255, 255, 255), font=f_small)
+        draw.text((64, 175), f"{a_label} {a_val:.0f}%", fill=(180, 190, 210), font=f_small)
+        draw.text((140, 175), now, fill=(255, 255, 255), font=f_small)
 
         return Image.alpha_composite(bg, overlay).convert("RGB")
 
-    def render_dual_gauge(self, metrics: SystemMetrics) -> Image.Image:
+    def render_dual_gauge(
+        self,
+        metrics: SystemMetrics,
+        primary_metric: str = "cpu",
+        secondary_metric: str = "gpu",
+        aux_metric: str = "ram",
+        temp_unit: str = "C",
+    ) -> Image.Image:
         """
-        Renders a dual gauge dashboard (CPU on left, GPU on right)
+        Renders a dual gauge dashboard (Primary on left, Secondary on right)
         with usage percentages as the primary large numbers.
         """
+        p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
+        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(12, 14, 20))
         draw = ImageDraw.Draw(img)
-
         cx, cy = WIDTH // 2, HEIGHT // 2
 
         # Draw outer circle subtle border
         draw.ellipse([8, 8, WIDTH - 8, HEIGHT - 8], outline=(35, 40, 55), width=2)
 
-        # CPU Left Arc (from 130 deg to 230 deg)
-        bbox_cpu = [18, 18, WIDTH - 18, HEIGHT - 18]
-        draw.arc(bbox_cpu, start=130, end=230, fill=(35, 45, 65), width=8)
-        cpu_span = 100 * (min(100.0, max(0.0, metrics.cpu_percent)) / 100.0)
-        draw.arc(bbox_cpu, start=230 - cpu_span, end=230, fill=(0, 180, 255), width=8)
+        # Left Arc: Primary Metric (from 130 deg to 230 deg)
+        bbox_p = [18, 18, WIDTH - 18, HEIGHT - 18]
+        draw.arc(bbox_p, start=130, end=230, fill=(35, 45, 65), width=8)
+        p_span = 100 * (min(100.0, max(0.0, p_val)) / 100.0)
+        draw.arc(bbox_p, start=230 - p_span, end=230, fill=p_col, width=8)
 
-        # GPU Right Arc (from -50 deg to 50 deg)
-        bbox_gpu = [18, 18, WIDTH - 18, HEIGHT - 18]
-        draw.arc(bbox_gpu, start=-50, end=50, fill=(35, 55, 45), width=8)
-        gpu_span = 100 * (min(100.0, max(0.0, metrics.gpu_percent)) / 100.0)
-        draw.arc(bbox_gpu, start=-50, end=-50 + gpu_span, fill=(0, 230, 120), width=8)
+        # Right Arc: Secondary Metric (from -50 deg to 50 deg)
+        bbox_s = [18, 18, WIDTH - 18, HEIGHT - 18]
+        draw.arc(bbox_s, start=-50, end=50, fill=(35, 55, 45), width=8)
+        s_span = 100 * (min(100.0, max(0.0, s_val)) / 100.0)
+        draw.arc(bbox_s, start=-50, end=-50 + s_span, fill=s_col, width=8)
 
-        # CPU Left Content: Percentage LARGE, Temp SMALL
-        draw.text((36, 62), "CPU", fill=(0, 180, 255), font=self.font_medium)
-        draw.text((32, 86), f"{metrics.cpu_percent:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((36, 128), f"{metrics.cpu_temp:.0f}°C", fill=(170, 200, 220), font=self.font_small)
+        # Left Content: Percentage LARGE, Subtitle SMALL
+        draw.text((36, 62), p_label, fill=p_col, font=self.font_medium)
+        draw.text((30, 86), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+        draw.text((34, 128), p_sub, fill=(170, 200, 220), font=self.font_small)
 
-        # GPU Right Content: Percentage LARGE, Temp SMALL
-        draw.text((150, 62), "GPU", fill=(0, 230, 120), font=self.font_medium)
-        draw.text((144, 86), f"{metrics.gpu_percent:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((150, 128), f"{metrics.gpu_temp:.0f}°C", fill=(170, 220, 190), font=self.font_small)
+        # Right Content: Percentage LARGE, Subtitle SMALL
+        draw.text((150, 62), s_label, fill=s_col, font=self.font_medium)
+        draw.text((144, 86), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+        draw.text((148, 128), s_sub, fill=(170, 220, 190), font=self.font_small)
 
         # Divider line
         draw.line([cx, 72, cx, 148], fill=(45, 55, 75), width=1)
 
-        # Center Bottom: RAM & Time
+        # Center Bottom: Aux & Time
         now = datetime.datetime.now().strftime("%H:%M")
         draw.text((cx - 24, 166), now, fill=(200, 200, 210), font=self.font_medium)
-        draw.text((cx - 40, 193), f"RAM: {metrics.ram_percent:.0f}%", fill=(130, 140, 160), font=self.font_tiny)
+        draw.text((cx - 42, 193), f"{a_label}: {a_val:.0f}%", fill=(130, 140, 160), font=self.font_tiny)
 
         return img
 
-    def render_cyberpunk(self, metrics: SystemMetrics) -> Image.Image:
+    def render_cyberpunk(
+        self,
+        metrics: SystemMetrics,
+        primary_metric: str = "cpu",
+        secondary_metric: str = "gpu",
+        aux_metric: str = "ram",
+        temp_unit: str = "C",
+    ) -> Image.Image:
         """
         Futuristic neon theme with concentric progress rings and usage as primary readouts.
         """
+        p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
+        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(8, 8, 12))
         draw = ImageDraw.Draw(img)
-
         cx, cy = WIDTH // 2, HEIGHT // 2
 
-        # Outer ring: CPU usage
+        # Outer ring: Primary usage
         r_outer = 102
-        cpu_angle = int(360 * (min(100.0, max(0.0, metrics.cpu_percent)) / 100.0))
+        p_angle = int(360 * (min(100.0, max(0.0, p_val)) / 100.0))
         draw.ellipse([cx - r_outer, cy - r_outer, cx + r_outer, cy + r_outer], outline=(25, 30, 45), width=5)
-        if cpu_angle > 0:
-            draw.arc([cx - r_outer, cy - r_outer, cx + r_outer, cy + r_outer], start=-90, end=-90 + cpu_angle, fill=(255, 0, 128), width=5)
+        if p_angle > 0:
+            draw.arc([cx - r_outer, cy - r_outer, cx + r_outer, cy + r_outer], start=-90, end=-90 + p_angle, fill=(255, 0, 128), width=5)
 
-        # Middle ring: GPU usage
+        # Middle ring: Secondary usage
         r_mid = 90
-        gpu_angle = int(360 * (min(100.0, max(0.0, metrics.gpu_percent)) / 100.0))
+        s_angle = int(360 * (min(100.0, max(0.0, s_val)) / 100.0))
         draw.ellipse([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], outline=(20, 40, 45), width=5)
-        if gpu_angle > 0:
-            draw.arc([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], start=-90, end=-90 + gpu_angle, fill=(0, 255, 230), width=5)
+        if s_angle > 0:
+            draw.arc([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], start=-90, end=-90 + s_angle, fill=(0, 255, 230), width=5)
 
-        # Center Top: CPU Usage % (Large) + Temp (Small)
-        draw.text((cx - 36, 48), "CPU LOAD", fill=(255, 0, 128), font=self.font_tiny)
-        cpu_txt = f"{metrics.cpu_percent:.0f}%"
-        draw.text((cx - 30, 62), cpu_txt, fill=(255, 255, 255), font=self.font_large)
-        draw.text((cx - 22, 98), f"{metrics.cpu_temp:.0f}°C", fill=(180, 140, 160), font=self.font_tiny)
+        # Center Top: Primary Usage % (Large) + Subtitle (Small)
+        draw.text((cx - 36, 48), f"{p_label} LOAD", fill=(255, 0, 128), font=self.font_tiny)
+        draw.text((cx - 30, 62), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+        draw.text((cx - 24, 98), p_sub, fill=(180, 140, 160), font=self.font_tiny)
 
-        # Center Bottom: GPU Usage % (Large) + Temp (Small)
-        draw.text((cx - 36, 122), "GPU LOAD", fill=(0, 255, 230), font=self.font_tiny)
-        gpu_txt = f"{metrics.gpu_percent:.0f}%"
-        draw.text((cx - 30, 136), gpu_txt, fill=(255, 255, 255), font=self.font_large)
-        draw.text((cx - 22, 172), f"{metrics.gpu_temp:.0f}°C", fill=(140, 180, 180), font=self.font_tiny)
+        # Center Bottom: Secondary Usage % (Large) + Subtitle (Small)
+        draw.text((cx - 36, 122), f"{s_label} LOAD", fill=(0, 255, 230), font=self.font_tiny)
+        draw.text((cx - 30, 136), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+        draw.text((cx - 24, 172), s_sub, fill=(140, 180, 180), font=self.font_tiny)
 
-        # RAM small at very bottom
-        draw.text((cx - 32, 196), f"RAM {metrics.ram_percent:.0f}%", fill=(110, 120, 140), font=self.font_tiny)
+        # Aux at bottom
+        draw.text((cx - 36, 196), f"{a_label} {a_val:.0f}%", fill=(110, 120, 140), font=self.font_tiny)
 
         return img
 
-    def render_simple(self, metrics: SystemMetrics) -> Image.Image:
+    def render_simple(
+        self,
+        metrics: SystemMetrics,
+        primary_metric: str = "cpu",
+        secondary_metric: str = "gpu",
+        aux_metric: str = "ram",
+        temp_unit: str = "C",
+    ) -> Image.Image:
         """
         Minimalist card readout with usage percentages as large numbers.
         """
+        p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
+        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(14, 16, 22))
         draw = ImageDraw.Draw(img)
 
         # Accent circle
         draw.ellipse([10, 10, WIDTH - 10, HEIGHT - 10], outline=(40, 45, 60), width=2)
 
-        # Top section: CPU (Usage Large, Temp Small)
-        draw.text((42, 38), "CPU LOAD", fill=(0, 170, 255), font=self.font_small)
-        draw.text((42, 58), f"{metrics.cpu_percent:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((140, 70), f"{metrics.cpu_temp:.0f}°C", fill=(150, 160, 180), font=self.font_small)
+        # Top section: Primary Metric
+        draw.text((42, 38), f"{p_label} LOAD", fill=p_col, font=self.font_small)
+        draw.text((42, 58), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+        draw.text((136, 70), p_sub, fill=(150, 160, 180), font=self.font_small)
 
         # Divider
         draw.line([40, 118, WIDTH - 40, 118], fill=(45, 50, 68), width=1)
 
-        # Bottom section: GPU (Usage Large, Temp Small)
-        draw.text((42, 128), "GPU LOAD", fill=(50, 220, 120), font=self.font_small)
-        draw.text((42, 148), f"{metrics.gpu_percent:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((140, 160), f"{metrics.gpu_temp:.0f}°C", fill=(150, 160, 180), font=self.font_small)
+        # Bottom section: Secondary Metric
+        draw.text((42, 128), f"{s_label} LOAD", fill=s_col, font=self.font_small)
+        draw.text((42, 148), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+        draw.text((136, 160), s_sub, fill=(150, 160, 180), font=self.font_small)
 
-        # Center Bottom: RAM
-        draw.text((WIDTH // 2 - 32, 198), f"RAM: {metrics.ram_percent:.0f}%", fill=(120, 130, 150), font=self.font_tiny)
+        # Center Bottom: Aux
+        draw.text((WIDTH // 2 - 34, 198), f"{a_label}: {a_val:.0f}%", fill=(120, 130, 150), font=self.font_tiny)
 
         return img
 
-    def render_bignum(self, metrics: SystemMetrics, metric_type: str = "cpu") -> Image.Image:
+    def render_bignum(
+        self,
+        metrics: SystemMetrics,
+        primary_metric: str = "cpu",
+        secondary_metric: str = "gpu",
+        aux_metric: str = "ram",
+        temp_unit: str = "C",
+    ) -> Image.Image:
         """
         Big Number theme: Displays one massive prominent metric in the center
         with a 270-degree tachometer arc gauge and secondary stats below.
         """
+        p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
+        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(10, 12, 18))
         draw = ImageDraw.Draw(img)
-
         cx, cy = WIDTH // 2, HEIGHT // 2
 
         # Outer subtle frame
         draw.ellipse([8, 8, WIDTH - 8, HEIGHT - 8], outline=(28, 32, 44), width=2)
 
-        # Determine primary metric and color
-        if metric_type == "gpu":
-            title = "GPU UTILIZATION"
-            primary_val = min(100.0, max(0.0, metrics.gpu_percent))
-            temp_val = metrics.gpu_temp
-            accent_color = (0, 230, 120)
-        else:
-            title = "CPU UTILIZATION"
-            primary_val = min(100.0, max(0.0, metrics.cpu_percent))
-            temp_val = metrics.cpu_temp
-            accent_color = (0, 180, 255)
-
-        # Dynamic arc color (Cyan/Green -> Orange if >75% -> Red if >90%)
-        if primary_val >= 90:
+        # Dynamic arc color (Accent -> Orange if >75% -> Red if >90%)
+        if p_val >= 90:
             gauge_color = (255, 50, 50)
-        elif primary_val >= 75:
+        elif p_val >= 75:
             gauge_color = (255, 170, 0)
         else:
-            gauge_color = accent_color
+            gauge_color = p_col
 
         # 270-degree sweep arc: starts at 135 deg, ends at 405 deg (45 deg)
         bbox = [18, 18, WIDTH - 18, HEIGHT - 18]
         draw.arc(bbox, start=135, end=405, fill=(30, 36, 50), width=9)
-        sweep_angle = 270.0 * (primary_val / 100.0)
+        sweep_angle = 270.0 * (min(100.0, max(0.0, p_val)) / 100.0)
         if sweep_angle > 0:
             draw.arc(bbox, start=135, end=135 + sweep_angle, fill=gauge_color, width=9)
 
         # Title at top
-        draw.text((cx - 52, 40), title, fill=accent_color, font=self.font_tiny)
+        title = f"{p_label} UTILIZATION"
+        t_bbox = draw.textbbox((0, 0), title, font=self.font_tiny)
+        t_w = t_bbox[2] - t_bbox[0]
+        draw.text((cx - t_w // 2, 40), title, fill=p_col, font=self.font_tiny)
 
         # Giant number in center
-        val_str = f"{primary_val:.0f}"
-        # Measure text to center it
+        val_str = f"{p_val:.0f}"
         num_bbox = draw.textbbox((0, 0), val_str, font=self.font_giant)
         num_w = num_bbox[2] - num_bbox[0]
         unit_w = 18
 
         start_x = cx - (num_w + unit_w) // 2
         draw.text((start_x, 66), val_str, fill=(255, 255, 255), font=self.font_giant)
-        draw.text((start_x + num_w + 3, 76), "%", fill=accent_color, font=self.font_medium)
+        draw.text((start_x + num_w + 3, 76), "%", fill=p_col, font=self.font_medium)
 
-        # Secondary stats row (Temp and RAM)
-        sec_text = f"TEMP: {temp_val:.0f}°C   RAM: {metrics.ram_percent:.0f}%"
+        # Secondary stats row (e.g. "TEMP: 42°C   GPU: 4%")
+        sec_text = f"{p_sub}   {s_label}: {s_val:.0f}%   {a_label}: {a_val:.0f}%"
         sec_bbox = draw.textbbox((0, 0), sec_text, font=self.font_tiny)
         sec_w = sec_bbox[2] - sec_bbox[0]
         draw.text((cx - sec_w // 2, 148), sec_text, fill=(160, 175, 195), font=self.font_tiny)

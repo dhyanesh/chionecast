@@ -19,11 +19,40 @@ except ImportError:
 class SystemMetrics:
     cpu_percent: float
     cpu_temp: float
+    cpu_freq_ghz: float
     gpu_percent: float
     gpu_temp: float
     vram_percent: float
+    vram_used_gb: float
+    vram_total_gb: float
     ram_percent: float
+    ram_used_gb: float
+    ram_total_gb: float
     gpu_name: str
+
+    def get_metric_data(self, key: str, temp_unit: str = "C") -> tuple[str, float, str, tuple[int, int, int]]:
+        """
+        Returns (label, value_percentage, subtitle_string, rgb_color_tuple)
+        for any requested metric key ('cpu', 'gpu', 'ram', 'vram').
+        """
+        key = key.lower().strip()
+        is_f = temp_unit.upper() == "F"
+
+        if key == "gpu":
+            t = (self.gpu_temp * 9.0 / 5.0 + 32.0) if is_f else self.gpu_temp
+            unit = "°F" if is_f else "°C"
+            return ("GPU", self.gpu_percent, f"{t:.0f}{unit}", (0, 230, 120))
+
+        elif key == "ram":
+            return ("RAM", self.ram_percent, f"{self.ram_used_gb:.1f}/{self.ram_total_gb:.0f}G", (180, 140, 255))
+
+        elif key == "vram":
+            return ("VRAM", self.vram_percent, f"{self.vram_used_gb:.1f}/{self.vram_total_gb:.0f}G", (255, 100, 200))
+
+        else:  # default to cpu
+            t = (self.cpu_temp * 9.0 / 5.0 + 32.0) if is_f else self.cpu_temp
+            unit = "°F" if is_f else "°C"
+            return ("CPU", self.cpu_percent, f"{t:.0f}{unit}", (0, 210, 255))
 
 
 class StatsCollector:
@@ -78,12 +107,26 @@ class StatsCollector:
         # CPU
         cpu_pct = psutil.cpu_percent(interval=None)
         cpu_t = self.get_cpu_temp()
-        ram_pct = psutil.virtual_memory().percent
+        cpu_freq_ghz = 0.0
+        try:
+            freq = psutil.cpu_freq()
+            if freq and freq.current:
+                cpu_freq_ghz = freq.current / 1000.0
+        except Exception:
+            pass
+
+        # RAM
+        vm = psutil.virtual_memory()
+        ram_pct = vm.percent
+        ram_used_gb = vm.used / (1024.0 ** 3)
+        ram_total_gb = vm.total / (1024.0 ** 3)
 
         # GPU
         gpu_pct = 0.0
         gpu_t = 0.0
         vram_pct = 0.0
+        vram_used_gb = 0.0
+        vram_total_gb = 0.0
 
         if self._nvml_initialized and self._gpu_handle:
             try:
@@ -91,17 +134,25 @@ class StatsCollector:
                 gpu_pct = float(util.gpu)
                 gpu_t = float(pynvml.nvmlDeviceGetTemperature(self._gpu_handle, pynvml.NVML_TEMPERATURE_GPU))
                 mem = pynvml.nvmlDeviceGetMemoryInfo(self._gpu_handle)
-                vram_pct = float(mem.used / mem.total * 100.0)
+                vram_used_gb = float(mem.used / (1024.0 ** 3))
+                vram_total_gb = float(mem.total / (1024.0 ** 3))
+                if mem.total > 0:
+                    vram_pct = float(mem.used / mem.total * 100.0)
             except Exception:
                 pass
 
         return SystemMetrics(
             cpu_percent=cpu_pct,
             cpu_temp=cpu_t,
+            cpu_freq_ghz=cpu_freq_ghz,
             gpu_percent=gpu_pct,
             gpu_temp=gpu_t,
             vram_percent=vram_pct,
+            vram_used_gb=vram_used_gb,
+            vram_total_gb=vram_total_gb,
             ram_percent=ram_pct,
+            ram_used_gb=ram_used_gb,
+            ram_total_gb=ram_total_gb,
             gpu_name=self._gpu_name,
         )
 

@@ -168,3 +168,60 @@ chionecast --rotate 180 --bg /path/to/custom_wallpaper.png
 | `bignum` | Vector | Massive 60px number + 270° arc | `chionecast --theme bignum` |
 | `simple` | Vector | Minimalist two-card dashboard | `chionecast --theme simple` |
 | *Custom* | User GIF/PNG | Frosted telemetry over user media | `chionecast --bg <file>` |
+
+---
+
+## Independent Metric Configuration
+
+Telemetry metric selection is completely decoupled from visual themes. Any metric can be assigned to any slot:
+
+| Flag | Supported Values | Default | Visual Mapping |
+|---|---|---|---|
+| `--primary` | `cpu`, `gpu`, `ram`, `vram` | `cpu` | Left card / Outer neon ring / Big number tachometer |
+| `--secondary` | `cpu`, `gpu`, `ram`, `vram` | `gpu` | Right card / Inner neon ring / Secondary readout |
+| `--aux` | `ram`, `vram`, `none` | `ram` | Bottom status pill badge |
+| `--unit` | `C`, `F` | `C` | Temperature readout unit (°C / °F) |
+
+### Examples:
+```bash
+# Monitor GPU as primary and CPU as secondary on Reactor theme
+chionecast --theme reactor --primary gpu --secondary cpu
+
+# Monitor CPU and System RAM on Dual Gauge theme
+chionecast --theme dual --primary cpu --secondary ram
+
+# Monitor GPU load in Big Number theme
+chionecast --theme bignum --primary gpu
+
+# Save chosen metrics and theme to persistent configuration (~/.config/chionecast/config.json)
+chionecast --theme reactor --primary gpu --secondary cpu --save-config --config-only
+```
+
+---
+
+## Independent Metric Configuration
+
+Telemetry metric selection is completely decoupled from visual themes. Any metric can be assigned to any slot:
+
+| Flag | Supported Values | Default | Visual Mapping |
+|---|---|---|---|
+| `--primary` | `cpu`, `gpu`, `ram`, `vram` | `cpu` | Left card / Outer neon ring / Big number tachometer |
+| `--secondary` | `cpu`, `gpu`, `ram`, `vram` | `gpu` | Right card / Inner neon ring / Secondary readout |
+| `--aux` | `ram`, `vram`, `none` | `ram` | Bottom status pill badge |
+| `--unit` | `C`, `F` | `C` | Temperature readout unit (°C / °F) |
+
+### Examples:
+```bash
+# Monitor GPU as primary and CPU as secondary on Reactor theme
+chionecast --theme reactor --primary gpu --secondary cpu
+
+# Monitor CPU and System RAM on Dual Gauge theme
+chionecast --theme dual --primary cpu --secondary ram
+
+# Monitor GPU load in Big Number theme
+chionecast --theme bignum --primary gpu
+
+# Save chosen metrics and theme to persistent configuration (~/.config/chionecast/config.json)
+chionecast --theme reactor --primary gpu --secondary cpu --save-config --config-only
+```
+

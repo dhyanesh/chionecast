@@ -5,7 +5,7 @@ PartOf=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/chionecast --rotate 180 --theme dual --interval 1.0
+ExecStart=/usr/bin/chionecast
 Restart=always
 RestartSec=3
 

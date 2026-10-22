@@ -23,6 +23,7 @@ cp "${SCRIPT_DIR}/chione_cli.py" "${BUILD_DIR}/usr/lib/chionecast/"
 cp "${SCRIPT_DIR}/chione_device.py" "${BUILD_DIR}/usr/lib/chionecast/"
 cp "${SCRIPT_DIR}/display_renderer.py" "${BUILD_DIR}/usr/lib/chionecast/"
 cp "${SCRIPT_DIR}/system_stats.py" "${BUILD_DIR}/usr/lib/chionecast/"
+cp "${SCRIPT_DIR}/config_manager.py" "${BUILD_DIR}/usr/lib/chionecast/"
 chmod 644 "${BUILD_DIR}/usr/lib/chionecast/"*.py
 chmod 755 "${BUILD_DIR}/usr/lib/chionecast/chione_cli.py"
 

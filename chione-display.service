@@ -5,9 +5,9 @@ After=graphical.target
 [Service]
 Type=simple
 WorkingDirectory=/home/dhyanesh/dev/chionecast
-ExecStart=/home/dhyanesh/dev/chionecast/venv/bin/python /home/dhyanesh/dev/chionecast/chione_cli.py --theme dual --interval 1.0
+ExecStart=/home/dhyanesh/dev/chionecast/venv/bin/python /home/dhyanesh/dev/chionecast/chione_cli.py
 Restart=always
-RestartSec=5
+RestartSec=3
 
 [Install]
 WantedBy=default.target
