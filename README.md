@@ -78,6 +78,15 @@ chionecast --rotate 180 --theme dual
 ./venv/bin/python chione_cli.py --rotate 90 --brightness 8
 ```
 
+### Process Management & Screen Clearing
+```bash
+# Terminate any existing background session and take over the display
+./venv/bin/python chione_cli.py --replace --rotate 180 --theme reactor
+
+# Clear the screen to black and exit
+./venv/bin/python chione_cli.py --clear
+```
+
 ### Display Static Image or Animated GIF
 ```bash
 # Display a custom image (automatically resized to 240x240)

@@ -29,19 +29,14 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def test_device():
+def test_device(dev: ChioneDevice):
     print(f"Connecting to GAMDIAS CHIONE P3 (VID: 0x{VENDOR_ID:04X}, PID: 0x{PRODUCT_ID:04X})...")
-    dev = ChioneDevice()
-    try:
-        dev.open()
-        print(" Successfully connected to USB AEOLUS BOX!")
-        print("Setting default brightness (8) and orientation (0°)...")
-        dev.set_config(rotation_deg=0, brightness=8)
-        print("Device communication verified.")
-        dev.close()
-    except Exception as e:
-        print(f"Connection failed: {e}")
-        sys.exit(1)
+    print("✓ Successfully connected to USB AEOLUS BOX!")
+    print("Setting default brightness (8) and orientation (0°)...")
+    dev.set_config(rotation_deg=0, brightness=8)
+    print("Clearing display...")
+    dev.init_stream(clear=True)
+    print("Device communication verified.")
 
 
 THEMES = ["dual", "cyberpunk", "simple", "bignum", "reactor", "vortex", "hud", "ring"]
@@ -176,6 +171,8 @@ def main():
     parser.add_argument("--snapshot", type=str, help="Render and save a test snapshot to PNG without sending to device")
     parser.add_argument("--config-only", action="store_true", help="Only set rotation/brightness and exit without starting monitor")
     parser.add_argument("--daemon", action="store_true", help="Run continuously monitoring system telemetry")
+    parser.add_argument("--replace", action="store_true", help="Terminate any existing chionecast instance and take control of the display")
+    parser.add_argument("--clear", action="store_true", help="Clear the display to black and exit")
 
     args = parser.parse_args()
 
@@ -183,21 +180,29 @@ def main():
         save_snapshot(args.theme, args.snapshot, custom_bg=args.bg)
         return
 
-    if args.test:
-        test_device()
-        return
-
     dev = ChioneDevice()
-    dev.open()
+    try:
+        dev.open(replace=args.replace)
+    except RuntimeError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
     try:
+        if args.test:
+            test_device(dev)
+            return
+
         # Always send config to wake/init the display, using provided or default values
         rot = args.rotate if args.rotate is not None else 0
         bri = args.brightness if args.brightness is not None else 8
         print(f"Configuring LCD: Rotation = {rot}°, Brightness = {bri}")
         dev.set_config(rotation_deg=rot, brightness=bri)
-        print("Initializing LCD stream mode...")
-        dev.init_stream()
+        print("Initializing LCD stream mode (clearing old frame buffer)...")
+        dev.init_stream(clear=True)
+
+        if args.clear:
+            print("Display cleared to black.")
+            return
 
         # Mode execution
         if args.image:
