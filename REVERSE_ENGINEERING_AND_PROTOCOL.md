@@ -154,3 +154,78 @@ Then reload udev rules:
 ```bash
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
+
+---
+
+## 5. Checksum Algorithm Specification
+
+Disassembled from method `SCE` in `CHIONE-CAST.exe`:
+All 9-byte command packets to the AEOLUS box follow this exact checksum algorithm:
+
+```python
+def calculate_checksum(packet: bytes) -> int:
+    """
+    Vendor checksum for GAMDIAS AEOLUS Box command packets.
+    Iteratively subtracts bytes 1..7 from 0xFF.
+    """
+    chk = 0xFF
+    for b in packet[1:8]:
+        chk = (chk - b) & 0xFF
+    return chk
+```
+
+### Verification:
+* Wake / Rotate packet: `[0x00, 0x81, 0x04, 0x00, 0x02, 0x08, 0x00, 0x00]`
+  $0\text{xFF} - 0\text{x81} - 0\text{x04} - 0\text{x02} - 0\text{x08} = 0\text{x70}$ (Matches `0x70` in packet!)
+* Stream Init packet: `[0x00, 0x81, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]`
+  $0\text{xFF} - 0\text{x81} - 0\text{x01} = 0\text{x7D}$ (Matches `0x7D` in packet!)
+
+---
+
+## 6. AEOLUS Box Lighting Control Protocol
+
+Disassembled from `USBPort40H_Light` (`0x119E4`) and `Lighting_ID2Mode`:
+
+### Command Packet Format (9 bytes)
+| Byte Index | Field | Values | Description |
+|---|---|---|---|
+| 0 | Report ID | `0x00` | Standard HID Report ID |
+| 1 | Command | `0x40` | Lighting Control Subsystem |
+| 2 | Target | `0x01` | Fan / LED strip bank |
+| 3 | `Light_EF` | `0x00`..`0x1D` | Lighting Mode Effect ID (1..30) |
+| 4 | `Light_BR` | `0x01`..`0x08` | Brightness Level |
+| 5 | `Light_SP` | `0x01`..`0x05` | Animation Speed |
+| 6 | `Light_DI` | `0x00` or `0x01` | Direction (Clockwise / Counterclockwise) |
+| 7 | Reserved | `0x00` | Unused |
+| 8 | Checksum | `SCE(packet)` | 8-bit difference checksum |
+
+### Discovered Lighting Presets (30 Modes):
+1. **Static Modes (1–7):** Single color presets (Red, Orange, Yellow, Green, Cyan, Blue, Magenta).
+2. **Rainbow (1):** Multi-color continuous flow.
+3. **Spectrum / Color Cycle (1–2):** Synchronized color fading.
+4. **Flow (1–5):** Directional RGB flow patterns.
+5. **Wave (1–4):** Radial and angular RGB wave oscillations.
+6. **Mixing / Sway (1–3):** Dual-color blending patterns.
+7. **Neon (1–4):** High-contrast pulsating hues.
+8. **Stack / Marquee (1–3):** Chasing LED patterns.
+9. **Dark (Off):** Shuts off all AEOLUS Box LEDs.
+
+---
+
+## 7. Vendor UI Modes & Extracted Assets
+
+The vendor application provides 4 operational modes:
+1. **Hardware Library Mode**:
+   - Renders animated GIF or static graphic background on LCD.
+   - Overlays up to 3 telemetry text fields (`Text_CPUID1`, `Text_CPUID2`, `Text_CPUID3`) at user-defined (X, Y) coordinates.
+   - Text color selectable from palette (`#FF0000`, `#00FF00`, `#007FFF`, `#FFFFFF`, etc.).
+2. **Custom Media Mode**:
+   - User-supplied 240x240 PNG, JPG, or animated GIF.
+   - Streams at target frame rate (default ~30 FPS).
+3. **Hardware Telemetry**:
+   - CPU (Usage %, Temp, Clock GHz, Voltage).
+   - GPU (Usage %, Temp, Clock MHz, VRAM %).
+   - RAM (Usage %, Memory Used).
+   - Pump / Fan (RPM).
+4. **Motherboard ARGB Sync (`LED_MB`)**:
+   - Hands over lighting control to the 3-pin 5V ARGB motherboard header.

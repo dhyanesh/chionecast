@@ -26,3 +26,12 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Vendor downloads & binaries
+downloads/
+
+# Debian package builds
+*.deb
+debian/chionecast/
+debian/.debhelper/
+

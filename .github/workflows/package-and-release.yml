@@ -1,0 +1,50 @@
+name: Build and Release Debian Package
+
+on:
+  push:
+    branches: [ master, main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev python3-pil python3-psutil python3-hidapi
+
+      - name: Build Debian Package
+        run: |
+          chmod +x package_deb.sh
+          ./package_deb.sh
+
+      - name: Verify Package Contents and Lint
+        run: |
+          dpkg -c chionecast_*.deb
+          dpkg-deb -I chionecast_*.deb
+
+      - name: Upload Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chionecast-deb
+          path: chionecast_*.deb
+
+      - name: Release on Tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: chionecast_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
