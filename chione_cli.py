@@ -8,6 +8,7 @@ import sys
 import time
 import argparse
 import signal
+from typing import Optional
 from PIL import Image, ImageSequence
 
 from chione_device import ChioneDevice, VENDOR_ID, PRODUCT_ID
@@ -43,12 +44,18 @@ def test_device():
         sys.exit(1)
 
 
-def save_snapshot(theme: str, output_path: str):
+THEMES = ["dual", "cyberpunk", "simple", "bignum", "reactor", "vortex", "hud", "ring"]
+
+
+def save_snapshot(theme: str, output_path: str, custom_bg: Optional[str] = None):
     collector = StatsCollector()
     renderer = DisplayRenderer()
     metrics = collector.get_metrics()
     
-    if theme == "cyberpunk":
+    if theme in ["reactor", "vortex", "hud", "ring"] or custom_bg:
+        frames = renderer.load_theme_frames(theme, custom_bg=custom_bg)
+        img = renderer.render_hud_overlay(frames[0], metrics)
+    elif theme == "cyberpunk":
         img = renderer.render_cyberpunk(metrics)
     elif theme == "simple":
         img = renderer.render_simple(metrics)
@@ -62,15 +69,37 @@ def save_snapshot(theme: str, output_path: str):
     collector.close()
 
 
-def run_monitor(dev: ChioneDevice, theme: str = "dual", interval: float = 1.0):
+def run_monitor(dev: ChioneDevice, theme: str = "dual", interval: float = 1.0, custom_bg: Optional[str] = None):
     collector = StatsCollector()
     renderer = DisplayRenderer()
-    print(f"Starting hardware monitor with theme '{theme}' (refresh interval: {interval}s)...")
+    print(f"Starting hardware monitor with theme '{theme}' (telemetry refresh: {interval}s)...")
+
+    # Check if this is an animated theme
+    is_overlay_theme = theme in ["reactor", "vortex", "hud", "ring"] or custom_bg is not None
+    frames = []
+    if is_overlay_theme:
+        frames = renderer.load_theme_frames(theme, custom_bg=custom_bg)
+        print(f"Loaded {len(frames)} theme background frames.")
 
     frame_count = 0
+    last_metric_time = 0.0
+    metrics = collector.get_metrics()
+
+    frame_idx = 0
+    num_frames = len(frames)
+
     while running:
-        metrics = collector.get_metrics()
-        if theme == "cyberpunk":
+        now = time.time()
+        # Refresh metrics if interval has passed
+        if now - last_metric_time >= interval:
+            metrics = collector.get_metrics()
+            last_metric_time = now
+
+        if is_overlay_theme and num_frames > 0:
+            bg_frame = frames[frame_idx % num_frames]
+            frame = renderer.render_hud_overlay(bg_frame, metrics)
+            frame_idx += 1
+        elif theme == "cyberpunk":
             frame = renderer.render_cyberpunk(metrics)
         elif theme == "simple":
             frame = renderer.render_simple(metrics)
@@ -80,15 +109,26 @@ def run_monitor(dev: ChioneDevice, theme: str = "dual", interval: float = 1.0):
             frame = renderer.render_dual_gauge(metrics)
 
         try:
+            t_send_start = time.time()
             dev.display_image(frame)
             frame_count += 1
-            print(f"Frame {frame_count} sent | CPU {metrics.cpu_percent:.0f}% {metrics.cpu_temp:.0f}°C | "
-                  f"GPU {metrics.gpu_percent:.0f}% {metrics.gpu_temp:.0f}°C | RAM {metrics.ram_percent:.0f}%")
+            send_duration = time.time() - t_send_start
+
+            if frame_count % 30 == 1 or not is_overlay_theme or num_frames <= 1:
+                print(f"Frame {frame_count} sent | CPU {metrics.cpu_percent:.0f}% {metrics.cpu_temp:.0f}°C | "
+                      f"GPU {metrics.gpu_percent:.0f}% {metrics.gpu_temp:.0f}°C | RAM {metrics.ram_percent:.0f}%")
         except Exception as e:
             print(f"Error streaming frame: {e}")
             break
 
-        time.sleep(interval)
+        # Sleep handling:
+        # If animated (multiple frames), target ~25 FPS (~0.040s per frame)
+        if is_overlay_theme and num_frames > 1:
+            frame_target = 0.040
+            sleep_time = max(0.001, frame_target - send_duration)
+            time.sleep(sleep_time)
+        else:
+            time.sleep(interval)
 
     collector.close()
 
@@ -123,7 +163,13 @@ def main():
     parser.add_argument("--test", action="store_true", help="Test device connection and communication")
     parser.add_argument("--brightness", type=int, choices=range(1, 9), help="Set brightness (1 to 8)")
     parser.add_argument("--rotate", type=int, choices=[0, 90, 180, 270], help="Set orientation (0, 90, 180, 270 deg)")
-    parser.add_argument("--theme", choices=["dual", "cyberpunk", "simple", "bignum"], default="dual", help="Monitor dashboard theme")
+    parser.add_argument(
+        "--theme",
+        choices=THEMES,
+        default="dual",
+        help="Monitor theme: dual, cyberpunk, simple, bignum, reactor (animated), vortex (animated), hud (animated), ring"
+    )
+    parser.add_argument("--bg", type=str, help="Custom background image or animated GIF to overlay telemetry onto")
     parser.add_argument("--image", type=str, help="Display a static image (PNG/JPG)")
     parser.add_argument("--gif", type=str, help="Play an animated GIF")
     parser.add_argument("--interval", type=float, default=1.0, help="Refresh interval in seconds (default: 1.0)")
@@ -134,7 +180,7 @@ def main():
     args = parser.parse_args()
 
     if args.snapshot:
-        save_snapshot(args.theme, args.snapshot)
+        save_snapshot(args.theme, args.snapshot, custom_bg=args.bg)
         return
 
     if args.test:
@@ -159,7 +205,7 @@ def main():
         elif args.gif:
             play_gif(dev, args.gif)
         elif not args.config_only:
-            run_monitor(dev, theme=args.theme, interval=args.interval)
+            run_monitor(dev, theme=args.theme, interval=args.interval, custom_bg=args.bg)
     finally:
         dev.close()
 

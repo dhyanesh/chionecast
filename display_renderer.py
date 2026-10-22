@@ -3,12 +3,38 @@ display_renderer.py - Renders customized 240x240 dashboard layouts for the CHION
 """
 
 import math
+import os
 import datetime
-from PIL import Image, ImageDraw, ImageFont
+from typing import Optional, List
+from PIL import Image, ImageDraw, ImageFont, ImageSequence
 from system_stats import SystemMetrics
 
 WIDTH = 240
 HEIGHT = 240
+
+OFFICIAL_THEMES = {
+    "reactor": "official/animations/official_anim_2.gif",
+    "vortex": "official/animations/official_anim_1.gif",
+    "hud": "official/animations/cgif.gif",
+    "ring": "official/backgrounds/preset_0.png",
+}
+
+
+def find_asset(rel_path: str) -> Optional[str]:
+    """
+    Locates an asset file from local workspace, package paths, or system share dir.
+    """
+    candidates = [
+        os.path.join(os.path.dirname(__file__), "assets", rel_path),
+        os.path.join(os.path.dirname(__file__), rel_path),
+        os.path.join("/usr/share/chionecast/assets", rel_path),
+        os.path.join(os.getcwd(), "assets", rel_path),
+        rel_path,
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return None
 
 
 def _get_font(size: int):
@@ -52,6 +78,99 @@ class DisplayRenderer:
         self.font_medium = _get_font(20)
         self.font_small = _get_font(14)
         self.font_tiny = _get_regular_font(11)
+        self._frame_cache: dict[str, List[Image.Image]] = {}
+
+    def load_theme_frames(self, theme_name: str, custom_bg: Optional[str] = None) -> List[Image.Image]:
+        """
+        Loads and caches frames for an animated or static theme.
+        Returns a list of 240x240 RGB images.
+        """
+        cache_key = custom_bg or theme_name
+        if cache_key in self._frame_cache:
+            return self._frame_cache[cache_key]
+
+        target_file = None
+        if custom_bg:
+            target_file = custom_bg if os.path.isfile(custom_bg) else find_asset(custom_bg)
+        elif theme_name in OFFICIAL_THEMES:
+            target_file = find_asset(OFFICIAL_THEMES[theme_name])
+
+        if not target_file or not os.path.isfile(target_file):
+            # Fallback to simple black canvas if file not found
+            fallback = [Image.new("RGB", (WIDTH, HEIGHT), (12, 14, 20))]
+            return fallback
+
+        loaded_frames: List[Image.Image] = []
+        try:
+            im = Image.open(target_file)
+            for frame in ImageSequence.Iterator(im):
+                f = frame.copy().convert("RGBA")
+                if f.size != (WIDTH, HEIGHT):
+                    f = f.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+                loaded_frames.append(f)
+        except Exception as e:
+            print(f"Error loading theme assets from {target_file}: {e}")
+            loaded_frames = [Image.new("RGBA", (WIDTH, HEIGHT), (12, 14, 20))]
+
+        self._frame_cache[cache_key] = loaded_frames
+        return loaded_frames
+
+    def render_hud_overlay(self, bg_image: Image.Image, metrics: SystemMetrics) -> Image.Image:
+        """
+        Composites telemetry HUD onto a 240x240 background frame.
+        Usage percentages are dominant, temperatures are secondary.
+        """
+        bg = bg_image.convert("RGBA") if bg_image.mode != "RGBA" else bg_image.copy()
+        overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        # Left frosted card: CPU
+        draw.rounded_rectangle(
+            [20, 58, 114, 154],
+            radius=10,
+            fill=(10, 16, 26, 185),
+            outline=(0, 200, 255, 140),
+            width=1
+        )
+
+        # Right frosted card: GPU
+        draw.rounded_rectangle(
+            [126, 58, 220, 154],
+            radius=10,
+            fill=(10, 26, 18, 185),
+            outline=(0, 230, 120, 140),
+            width=1
+        )
+
+        # Bottom badge: RAM & Clock
+        draw.rounded_rectangle(
+            [58, 168, 182, 198],
+            radius=8,
+            fill=(12, 16, 22, 195),
+            outline=(45, 55, 75, 140),
+            width=1
+        )
+
+        f_title = _get_font(13)
+        f_large = _get_font(28)
+        f_small = _get_font(12)
+
+        # CPU Content (Cyan)
+        draw.text((34, 66), "CPU", fill=(0, 210, 255), font=f_title)
+        draw.text((30, 84), f"{metrics.cpu_percent:.0f}%", fill=(255, 255, 255), font=f_large)
+        draw.text((34, 126), f"{metrics.cpu_temp:.0f}°C", fill=(160, 200, 230), font=f_small)
+
+        # GPU Content (Emerald Green)
+        draw.text((140, 66), "GPU", fill=(0, 230, 120), font=f_title)
+        draw.text((136, 84), f"{metrics.gpu_percent:.0f}%", fill=(255, 255, 255), font=f_large)
+        draw.text((140, 126), f"{metrics.gpu_temp:.0f}°C", fill=(160, 230, 190), font=f_small)
+
+        # Bottom Badge Content: RAM and Time
+        now = datetime.datetime.now().strftime("%H:%M")
+        draw.text((68, 175), f"RAM {metrics.ram_percent:.0f}%", fill=(180, 190, 210), font=f_small)
+        draw.text((136, 175), now, fill=(255, 255, 255), font=f_small)
+
+        return Image.alpha_composite(bg, overlay).convert("RGB")
 
     def render_dual_gauge(self, metrics: SystemMetrics) -> Image.Image:
         """

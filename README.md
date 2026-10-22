@@ -7,10 +7,15 @@ Native Linux driver, telemetry monitor, and customization tool for the **GAMDIAS
 ## Features
 - **Real-Time Telemetry:** Displays CPU usage & temperature (Intel/AMD) and GPU usage, temperature & VRAM (NVIDIA RTX 4090 / GeForce / etc.).
 - **Multiple Visual Themes:**
+  - `reactor`: **(Official Animation)** 160-frame pulsing blue/cyan reactor ring with translucent telemetry cards.
+  - `vortex`: **(Official Animation)** 64-frame fluid swirl vortex with high-contrast readouts.
+  - `hud`: **(Official Animation)** 160-frame spinning circular gauge HUD animation.
+  - `ring`: **(Official Background)** GAMDIAS CHIONE P3 golden tech ring background (`preset_0.png`).
   - `dual`: Dual arc gauges with real-time temperature, load, clock, and RAM info (large % readout).
   - `cyberpunk`: Concentric neon rings for CPU and GPU with high-contrast readouts.
   - `bignum`: Dominant large single-number readout (CPU or GPU %) with a 270° tachometer arc gauge.
   - `simple`: Minimalist clean card dashboard.
+  - Custom `--bg <image_or_gif>`: Overlay live telemetry cards onto ANY user-provided GIF animation or image!
 - **Official Assets & Animations:** Shipped with all vendor animations (`official_anim_1.gif`, `official_anim_2.gif`, `cgif.gif`) and backgrounds.
 - **Custom Images & Animations:** Stream static images (`.png`, `.jpg`) or animated GIFs directly to the 240×240 IPS LCD screen.
 - **Orientation & Brightness Control:** Configure rotation (`0°`, `90°`, `180°`, `270°`) and brightness (`1` to `8`).
@@ -41,14 +46,26 @@ chionecast --rotate 180 --theme dual
 # 1. Install Udev Rules
 ./setup.sh
 
-# 2. Run with default Dual Gauge theme (rotated 180°)
+# 2. Run with official animated Reactor theme (rotated 180°)
+./venv/bin/python chione_cli.py --rotate 180 --theme reactor
+
+# Run with official animated Vortex theme
+./venv/bin/python chione_cli.py --rotate 180 --theme vortex
+
+# Run with official animated HUD theme
+./venv/bin/python chione_cli.py --rotate 180 --theme hud
+
+# Run with official Golden Ring theme
+./venv/bin/python chione_cli.py --rotate 180 --theme ring
+
+# Run with default Dual Gauge theme
 ./venv/bin/python chione_cli.py --rotate 180 --theme dual
 
 # Run with Big Number theme
 ./venv/bin/python chione_cli.py --rotate 180 --theme bignum
 
-# Stream official vendor animation
-./venv/bin/python chione_cli.py --rotate 180 --gif assets/official/animations/official_anim_1.gif
+# Overlay telemetry onto any custom animated GIF
+./venv/bin/python chione_cli.py --rotate 180 --bg /path/to/my_animation.gif
 ```
 
 ---
