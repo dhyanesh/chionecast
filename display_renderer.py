@@ -127,61 +127,98 @@ class DisplayRenderer:
         """
         Composites telemetry HUD onto a 240x240 background frame.
         Usage percentages are dominant, secondary metrics are styled below.
-        Supports any arbitrary metric assignments (CPU, GPU, RAM, VRAM).
+        If secondary_metric is 'none', renders a single centered card.
         """
+        has_secondary = secondary_metric not in (None, "none", "")
+        has_aux = aux_metric not in (None, "none", "")
+
         p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
-        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
-        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+        if has_secondary:
+            s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        if has_aux:
+            a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
 
         bg = bg_image.convert("RGBA") if bg_image.mode != "RGBA" else bg_image.copy()
         overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
+        cx = WIDTH // 2
 
-        # Left frosted card: Primary Metric
-        draw.rounded_rectangle(
-            [20, 58, 114, 154],
-            radius=10,
-            fill=(10, 16, 26, 185),
-            outline=(*p_col[:3], 140),
-            width=1,
-        )
-
-        # Right frosted card: Secondary Metric
-        draw.rounded_rectangle(
-            [126, 58, 220, 154],
-            radius=10,
-            fill=(10, 26, 18, 185),
-            outline=(*s_col[:3], 140),
-            width=1,
-        )
-
-        # Bottom badge: Auxiliary Metric & Clock
-        draw.rounded_rectangle(
-            [54, 168, 186, 198],
-            radius=8,
-            fill=(12, 16, 22, 195),
-            outline=(45, 55, 75, 140),
-            width=1,
-        )
-
-        f_title = _get_font(13)
-        f_large = _get_font(28)
+        f_title = _get_font(14 if not has_secondary else 13)
+        f_large = _get_font(36 if not has_secondary else 28)
+        f_sub = _get_font(13 if not has_secondary else 12)
         f_small = _get_font(12)
 
-        # Primary Metric Card (Left)
-        draw.text((34, 66), p_label, fill=p_col, font=f_title)
-        draw.text((28, 84), f"{p_val:.0f}%", fill=(255, 255, 255), font=f_large)
-        draw.text((32, 126), p_sub, fill=(180, 210, 235), font=f_small)
+        if has_secondary:
+            # Dual Card Layout (Left & Right)
+            draw.rounded_rectangle(
+                [20, 58, 114, 154],
+                radius=10,
+                fill=(10, 16, 26, 185),
+                outline=(*p_col[:3], 140),
+                width=1,
+            )
+            draw.rounded_rectangle(
+                [126, 58, 220, 154],
+                radius=10,
+                fill=(10, 26, 18, 185),
+                outline=(*s_col[:3], 140),
+                width=1,
+            )
 
-        # Secondary Metric Card (Right)
-        draw.text((140, 66), s_label, fill=s_col, font=f_title)
-        draw.text((134, 84), f"{s_val:.0f}%", fill=(255, 255, 255), font=f_large)
-        draw.text((138, 126), s_sub, fill=(180, 230, 205), font=f_small)
+            # Left Card Content
+            draw.text((34, 66), p_label, fill=p_col, font=f_title)
+            draw.text((28, 84), f"{p_val:.0f}%", fill=(255, 255, 255), font=f_large)
+            draw.text((32, 126), p_sub, fill=(180, 210, 235), font=f_sub)
 
-        # Bottom Badge Content: Aux and Clock
+            # Right Card Content
+            draw.text((140, 66), s_label, fill=s_col, font=f_title)
+            draw.text((134, 84), f"{s_val:.0f}%", fill=(255, 255, 255), font=f_large)
+            draw.text((138, 126), s_sub, fill=(180, 230, 205), font=f_sub)
+        else:
+            # Single Centered Card Layout
+            draw.rounded_rectangle(
+                [62, 54, 178, 156],
+                radius=10,
+                fill=(10, 16, 26, 190),
+                outline=(*p_col[:3], 140),
+                width=1,
+            )
+
+            # Centered Label
+            t_box = draw.textbbox((0, 0), p_label, font=f_title)
+            draw.text((cx - (t_box[2] - t_box[0]) // 2, 64), p_label, fill=p_col, font=f_title)
+
+            # Centered Percentage (Large)
+            val_str = f"{p_val:.0f}%"
+            v_box = draw.textbbox((0, 0), val_str, font=f_large)
+            draw.text((cx - (v_box[2] - v_box[0]) // 2, 84), val_str, fill=(255, 255, 255), font=f_large)
+
+            # Centered Subtitle
+            s_box = draw.textbbox((0, 0), p_sub, font=f_sub)
+            draw.text((cx - (s_box[2] - s_box[0]) // 2, 128), p_sub, fill=(180, 215, 240), font=f_sub)
+
+        # Bottom Badge: Aux and Clock
         now = datetime.datetime.now().strftime("%H:%M")
-        draw.text((64, 175), f"{a_label} {a_val:.0f}%", fill=(180, 190, 210), font=f_small)
-        draw.text((140, 175), now, fill=(255, 255, 255), font=f_small)
+        if has_aux:
+            draw.rounded_rectangle(
+                [54, 168, 186, 198],
+                radius=8,
+                fill=(12, 16, 22, 195),
+                outline=(45, 55, 75, 140),
+                width=1,
+            )
+            draw.text((64, 175), f"{a_label} {a_val:.0f}%", fill=(180, 190, 210), font=f_small)
+            draw.text((140, 175), now, fill=(255, 255, 255), font=f_small)
+        else:
+            # Clock only pill
+            draw.rounded_rectangle(
+                [90, 168, 150, 198],
+                radius=8,
+                fill=(12, 16, 22, 195),
+                outline=(45, 55, 75, 140),
+                width=1,
+            )
+            draw.text((102, 175), now, fill=(255, 255, 255), font=f_small)
 
         return Image.alpha_composite(bg, overlay).convert("RGB")
 
@@ -194,12 +231,17 @@ class DisplayRenderer:
         temp_unit: str = "C",
     ) -> Image.Image:
         """
-        Renders a dual gauge dashboard (Primary on left, Secondary on right)
-        with usage percentages as the primary large numbers.
+        Renders gauge dashboard. If secondary_metric is 'none', renders a single
+        wide sweep arc for the primary metric.
         """
+        has_secondary = secondary_metric not in (None, "none", "")
+        has_aux = aux_metric not in (None, "none", "")
+
         p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
-        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
-        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+        if has_secondary:
+            s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        if has_aux:
+            a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
 
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(12, 14, 20))
         draw = ImageDraw.Draw(img)
@@ -208,35 +250,57 @@ class DisplayRenderer:
         # Draw outer circle subtle border
         draw.ellipse([8, 8, WIDTH - 8, HEIGHT - 8], outline=(35, 40, 55), width=2)
 
-        # Left Arc: Primary Metric (from 130 deg to 230 deg)
-        bbox_p = [18, 18, WIDTH - 18, HEIGHT - 18]
-        draw.arc(bbox_p, start=130, end=230, fill=(35, 45, 65), width=8)
-        p_span = 100 * (min(100.0, max(0.0, p_val)) / 100.0)
-        draw.arc(bbox_p, start=230 - p_span, end=230, fill=p_col, width=8)
+        if has_secondary:
+            # Left Arc: Primary Metric (130 deg to 230 deg)
+            bbox_p = [18, 18, WIDTH - 18, HEIGHT - 18]
+            draw.arc(bbox_p, start=130, end=230, fill=(35, 45, 65), width=8)
+            p_span = 100 * (min(100.0, max(0.0, p_val)) / 100.0)
+            draw.arc(bbox_p, start=230 - p_span, end=230, fill=p_col, width=8)
 
-        # Right Arc: Secondary Metric (from -50 deg to 50 deg)
-        bbox_s = [18, 18, WIDTH - 18, HEIGHT - 18]
-        draw.arc(bbox_s, start=-50, end=50, fill=(35, 55, 45), width=8)
-        s_span = 100 * (min(100.0, max(0.0, s_val)) / 100.0)
-        draw.arc(bbox_s, start=-50, end=-50 + s_span, fill=s_col, width=8)
+            # Right Arc: Secondary Metric (-50 deg to 50 deg)
+            bbox_s = [18, 18, WIDTH - 18, HEIGHT - 18]
+            draw.arc(bbox_s, start=-50, end=50, fill=(35, 55, 45), width=8)
+            s_span = 100 * (min(100.0, max(0.0, s_val)) / 100.0)
+            draw.arc(bbox_s, start=-50, end=-50 + s_span, fill=s_col, width=8)
 
-        # Left Content: Percentage LARGE, Subtitle SMALL
-        draw.text((36, 62), p_label, fill=p_col, font=self.font_medium)
-        draw.text((30, 86), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((34, 128), p_sub, fill=(170, 200, 220), font=self.font_small)
+            # Left Content: Percentage LARGE, Subtitle SMALL
+            draw.text((36, 62), p_label, fill=p_col, font=self.font_medium)
+            draw.text((30, 86), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+            draw.text((34, 128), p_sub, fill=(170, 200, 220), font=self.font_small)
 
-        # Right Content: Percentage LARGE, Subtitle SMALL
-        draw.text((150, 62), s_label, fill=s_col, font=self.font_medium)
-        draw.text((144, 86), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((148, 128), s_sub, fill=(170, 220, 190), font=self.font_small)
+            # Right Content: Percentage LARGE, Subtitle SMALL
+            draw.text((150, 62), s_label, fill=s_col, font=self.font_medium)
+            draw.text((144, 86), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+            draw.text((148, 128), s_sub, fill=(170, 220, 190), font=self.font_small)
 
-        # Divider line
-        draw.line([cx, 72, cx, 148], fill=(45, 55, 75), width=1)
+            # Divider line
+            draw.line([cx, 72, cx, 148], fill=(45, 55, 75), width=1)
+        else:
+            # Single Centered 220° Sweep Arc
+            bbox = [18, 18, WIDTH - 18, HEIGHT - 18]
+            draw.arc(bbox, start=160, end=380, fill=(35, 45, 65), width=9)
+            sweep = 220.0 * (min(100.0, max(0.0, p_val)) / 100.0)
+            if sweep > 0:
+                draw.arc(bbox, start=160, end=160 + sweep, fill=p_col, width=9)
+
+            # Title
+            t_box = draw.textbbox((0, 0), p_label, font=self.font_medium)
+            draw.text((cx - (t_box[2] - t_box[0]) // 2, 54), p_label, fill=p_col, font=self.font_medium)
+
+            # Percentage Large
+            val_str = f"{p_val:.0f}%"
+            v_box = draw.textbbox((0, 0), val_str, font=self.font_huge)
+            draw.text((cx - (v_box[2] - v_box[0]) // 2, 78), val_str, fill=(255, 255, 255), font=self.font_huge)
+
+            # Subtitle
+            s_box = draw.textbbox((0, 0), p_sub, font=self.font_small)
+            draw.text((cx - (s_box[2] - s_box[0]) // 2, 130), p_sub, fill=(170, 200, 220), font=self.font_small)
 
         # Center Bottom: Aux & Time
         now = datetime.datetime.now().strftime("%H:%M")
         draw.text((cx - 24, 166), now, fill=(200, 200, 210), font=self.font_medium)
-        draw.text((cx - 42, 193), f"{a_label}: {a_val:.0f}%", fill=(130, 140, 160), font=self.font_tiny)
+        if has_aux:
+            draw.text((cx - 42, 193), f"{a_label}: {a_val:.0f}%", fill=(130, 140, 160), font=self.font_tiny)
 
         return img
 
@@ -249,11 +313,17 @@ class DisplayRenderer:
         temp_unit: str = "C",
     ) -> Image.Image:
         """
-        Futuristic neon theme with concentric progress rings and usage as primary readouts.
+        Futuristic neon theme with concentric progress rings.
+        If secondary_metric is 'none', renders a single outer ring with centered readout.
         """
+        has_secondary = secondary_metric not in (None, "none", "")
+        has_aux = aux_metric not in (None, "none", "")
+
         p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
-        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
-        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+        if has_secondary:
+            s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        if has_aux:
+            a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
 
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(8, 8, 12))
         draw = ImageDraw.Draw(img)
@@ -266,25 +336,38 @@ class DisplayRenderer:
         if p_angle > 0:
             draw.arc([cx - r_outer, cy - r_outer, cx + r_outer, cy + r_outer], start=-90, end=-90 + p_angle, fill=(255, 0, 128), width=5)
 
-        # Middle ring: Secondary usage
-        r_mid = 90
-        s_angle = int(360 * (min(100.0, max(0.0, s_val)) / 100.0))
-        draw.ellipse([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], outline=(20, 40, 45), width=5)
-        if s_angle > 0:
-            draw.arc([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], start=-90, end=-90 + s_angle, fill=(0, 255, 230), width=5)
+        if has_secondary:
+            # Middle ring: Secondary usage
+            r_mid = 90
+            s_angle = int(360 * (min(100.0, max(0.0, s_val)) / 100.0))
+            draw.ellipse([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], outline=(20, 40, 45), width=5)
+            if s_angle > 0:
+                draw.arc([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], start=-90, end=-90 + s_angle, fill=(0, 255, 230), width=5)
 
-        # Center Top: Primary Usage % (Large) + Subtitle (Small)
-        draw.text((cx - 36, 48), f"{p_label} LOAD", fill=(255, 0, 128), font=self.font_tiny)
-        draw.text((cx - 30, 62), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((cx - 24, 98), p_sub, fill=(180, 140, 160), font=self.font_tiny)
+            # Center Top: Primary Usage % (Large) + Subtitle (Small)
+            draw.text((cx - 36, 48), f"{p_label} LOAD", fill=(255, 0, 128), font=self.font_tiny)
+            draw.text((cx - 30, 62), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+            draw.text((cx - 24, 98), p_sub, fill=(180, 140, 160), font=self.font_tiny)
 
-        # Center Bottom: Secondary Usage % (Large) + Subtitle (Small)
-        draw.text((cx - 36, 122), f"{s_label} LOAD", fill=(0, 255, 230), font=self.font_tiny)
-        draw.text((cx - 30, 136), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((cx - 24, 172), s_sub, fill=(140, 180, 180), font=self.font_tiny)
+            # Center Bottom: Secondary Usage % (Large) + Subtitle (Small)
+            draw.text((cx - 36, 122), f"{s_label} LOAD", fill=(0, 255, 230), font=self.font_tiny)
+            draw.text((cx - 30, 136), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+            draw.text((cx - 24, 172), s_sub, fill=(140, 180, 180), font=self.font_tiny)
+        else:
+            # Single Centered Readout
+            t_box = draw.textbbox((0, 0), f"{p_label} LOAD", font=self.font_small)
+            draw.text((cx - (t_box[2] - t_box[0]) // 2, 60), f"{p_label} LOAD", fill=(255, 0, 128), font=self.font_small)
+
+            val_str = f"{p_val:.0f}%"
+            v_box = draw.textbbox((0, 0), val_str, font=self.font_giant)
+            draw.text((cx - (v_box[2] - v_box[0]) // 2, 82), val_str, fill=(255, 255, 255), font=self.font_giant)
+
+            s_box = draw.textbbox((0, 0), p_sub, font=self.font_medium)
+            draw.text((cx - (s_box[2] - s_box[0]) // 2, 148), p_sub, fill=(180, 160, 200), font=self.font_medium)
 
         # Aux at bottom
-        draw.text((cx - 36, 196), f"{a_label} {a_val:.0f}%", fill=(110, 120, 140), font=self.font_tiny)
+        if has_aux:
+            draw.text((cx - 36, 196), f"{a_label} {a_val:.0f}%", fill=(110, 120, 140), font=self.font_tiny)
 
         return img
 
@@ -298,32 +381,52 @@ class DisplayRenderer:
     ) -> Image.Image:
         """
         Minimalist card readout with usage percentages as large numbers.
+        If secondary_metric is 'none', renders a single centered card.
         """
+        has_secondary = secondary_metric not in (None, "none", "")
+        has_aux = aux_metric not in (None, "none", "")
+
         p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
-        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
-        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+        if has_secondary:
+            s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        if has_aux:
+            a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
 
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(14, 16, 22))
         draw = ImageDraw.Draw(img)
+        cx = WIDTH // 2
 
         # Accent circle
         draw.ellipse([10, 10, WIDTH - 10, HEIGHT - 10], outline=(40, 45, 60), width=2)
 
-        # Top section: Primary Metric
-        draw.text((42, 38), f"{p_label} LOAD", fill=p_col, font=self.font_small)
-        draw.text((42, 58), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((136, 70), p_sub, fill=(150, 160, 180), font=self.font_small)
+        if has_secondary:
+            # Top section: Primary Metric
+            draw.text((42, 38), f"{p_label} LOAD", fill=p_col, font=self.font_small)
+            draw.text((42, 58), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+            draw.text((136, 70), p_sub, fill=(150, 160, 180), font=self.font_small)
 
-        # Divider
-        draw.line([40, 118, WIDTH - 40, 118], fill=(45, 50, 68), width=1)
+            # Divider
+            draw.line([40, 118, WIDTH - 40, 118], fill=(45, 50, 68), width=1)
 
-        # Bottom section: Secondary Metric
-        draw.text((42, 128), f"{s_label} LOAD", fill=s_col, font=self.font_small)
-        draw.text((42, 148), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
-        draw.text((136, 160), s_sub, fill=(150, 160, 180), font=self.font_small)
+            # Bottom section: Secondary Metric
+            draw.text((42, 128), f"{s_label} LOAD", fill=s_col, font=self.font_small)
+            draw.text((42, 148), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
+            draw.text((136, 160), s_sub, fill=(150, 160, 180), font=self.font_small)
+        else:
+            # Centered Single Card
+            t_box = draw.textbbox((0, 0), f"{p_label} LOAD", font=self.font_medium)
+            draw.text((cx - (t_box[2] - t_box[0]) // 2, 52), f"{p_label} LOAD", fill=p_col, font=self.font_medium)
+
+            val_str = f"{p_val:.0f}%"
+            v_box = draw.textbbox((0, 0), val_str, font=self.font_giant)
+            draw.text((cx - (v_box[2] - v_box[0]) // 2, 78), val_str, fill=(255, 255, 255), font=self.font_giant)
+
+            s_box = draw.textbbox((0, 0), p_sub, font=self.font_medium)
+            draw.text((cx - (s_box[2] - s_box[0]) // 2, 144), p_sub, fill=(170, 180, 200), font=self.font_medium)
 
         # Center Bottom: Aux
-        draw.text((WIDTH // 2 - 34, 198), f"{a_label}: {a_val:.0f}%", fill=(120, 130, 150), font=self.font_tiny)
+        if has_aux:
+            draw.text((WIDTH // 2 - 34, 198), f"{a_label}: {a_val:.0f}%", fill=(120, 130, 150), font=self.font_tiny)
 
         return img
 
@@ -339,9 +442,14 @@ class DisplayRenderer:
         Big Number theme: Displays one massive prominent metric in the center
         with a 270-degree tachometer arc gauge and secondary stats below.
         """
+        has_secondary = secondary_metric not in (None, "none", "")
+        has_aux = aux_metric not in (None, "none", "")
+
         p_label, p_val, p_sub, p_col = metrics.get_metric_data(primary_metric, temp_unit)
-        s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
-        a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
+        if has_secondary:
+            s_label, s_val, s_sub, s_col = metrics.get_metric_data(secondary_metric, temp_unit)
+        if has_aux:
+            a_label, a_val, a_sub, a_col = metrics.get_metric_data(aux_metric, temp_unit)
 
         img = Image.new("RGB", (WIDTH, HEIGHT), color=(10, 12, 18))
         draw = ImageDraw.Draw(img)
@@ -381,8 +489,14 @@ class DisplayRenderer:
         draw.text((start_x, 66), val_str, fill=(255, 255, 255), font=self.font_giant)
         draw.text((start_x + num_w + 3, 76), "%", fill=p_col, font=self.font_medium)
 
-        # Secondary stats row (e.g. "TEMP: 42°C   GPU: 4%")
-        sec_text = f"{p_sub}   {s_label}: {s_val:.0f}%   {a_label}: {a_val:.0f}%"
+        # Secondary stats row
+        sec_parts = [p_sub]
+        if has_secondary:
+            sec_parts.append(f"{s_label}: {s_val:.0f}%")
+        if has_aux:
+            sec_parts.append(f"{a_label}: {a_val:.0f}%")
+        sec_text = "   ".join(sec_parts)
+
         sec_bbox = draw.textbbox((0, 0), sec_text, font=self.font_tiny)
         sec_w = sec_bbox[2] - sec_bbox[0]
         draw.text((cx - sec_w // 2, 148), sec_text, fill=(160, 175, 195), font=self.font_tiny)

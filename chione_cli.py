@@ -41,7 +41,7 @@ def test_device(dev: ChioneDevice):
 
 
 THEMES = ["dual", "cyberpunk", "simple", "bignum", "reactor", "vortex", "hud", "ring"]
-METRIC_CHOICES = ["cpu", "gpu", "ram", "vram"]
+METRIC_CHOICES = ["cpu", "gpu", "ram", "vram", "none"]
 
 
 def save_snapshot(
@@ -193,9 +193,11 @@ def run_monitor(dev: ChioneDevice, config: AppConfig):
 
             if frame_count % 30 == 1 or not is_overlay_theme or num_frames <= 1:
                 p_label, p_val, p_sub, _ = metrics.get_metric_data(primary, unit)
-                s_label, s_val, s_sub, _ = metrics.get_metric_data(secondary, unit)
-                print(f"Frame {frame_count} sent | {p_label} {p_val:.0f}% ({p_sub}) | "
-                      f"{s_label} {s_val:.0f}% ({s_sub}) | RAM {metrics.ram_percent:.0f}%")
+                sec_part = ""
+                if secondary not in ("none", "", None):
+                    s_label, s_val, s_sub, _ = metrics.get_metric_data(secondary, unit)
+                    sec_part = f" | {s_label} {s_val:.0f}% ({s_sub})"
+                print(f"Frame {frame_count} sent | {p_label} {p_val:.0f}% ({p_sub}){sec_part} | RAM {metrics.ram_percent:.0f}%")
         except Exception as e:
             print(f"Error streaming frame: {e}")
             break

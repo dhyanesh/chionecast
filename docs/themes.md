@@ -178,9 +178,20 @@ Telemetry metric selection is completely decoupled from visual themes. Any metri
 | Flag | Supported Values | Default | Visual Mapping |
 |---|---|---|---|
 | `--primary` | `cpu`, `gpu`, `ram`, `vram` | `cpu` | Left card / Outer neon ring / Big number tachometer |
-| `--secondary` | `cpu`, `gpu`, `ram`, `vram` | `gpu` | Right card / Inner neon ring / Secondary readout |
+| `--secondary` | `cpu`, `gpu`, `ram`, `vram`, `none` | `gpu` | Right card / Inner neon ring (or `none` for centered single-metric mode) |
 | `--aux` | `ram`, `vram`, `none` | `ram` | Bottom status pill badge |
 | `--unit` | `C`, `F` | `C` | Temperature readout unit (°C / °F) |
+
+### Single-Metric Mode (`--secondary none`)
+To show only one metric without a secondary card/ring, pass `--secondary none`. Themes dynamically re-layout to display a centered, enlarged single-metric card or arc:
+
+```bash
+# Centered single card on animated Reactor theme
+chionecast --theme reactor --primary cpu --secondary none
+
+# Centered single 220° sweep tachometer on Dual Gauge theme
+chionecast --theme dual --primary gpu --secondary none
+```
 
 ### Examples:
 ```bash
@@ -194,6 +205,6 @@ chionecast --theme dual --primary cpu --secondary ram
 chionecast --theme bignum --primary gpu
 
 # Save chosen metrics and theme to persistent configuration (~/.config/chionecast/config.json)
-chionecast --theme reactor --primary gpu --secondary cpu --save-config --config-only
+chionecast --theme reactor --primary gpu --secondary none --save-config --config-only
 ```
 

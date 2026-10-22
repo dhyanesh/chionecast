@@ -35,8 +35,11 @@ class SystemMetrics:
         Returns (label, value_percentage, subtitle_string, rgb_color_tuple)
         for any requested metric key ('cpu', 'gpu', 'ram', 'vram').
         """
-        key = key.lower().strip()
+        key = str(key).lower().strip() if key else "none"
         is_f = temp_unit.upper() == "F"
+
+        if key in ("none", "", "null"):
+            return ("NONE", 0.0, "", (100, 100, 100))
 
         if key == "gpu":
             t = (self.gpu_temp * 9.0 / 5.0 + 32.0) if is_f else self.gpu_temp
