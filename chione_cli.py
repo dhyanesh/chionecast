@@ -52,6 +52,8 @@ def save_snapshot(theme: str, output_path: str):
         img = renderer.render_cyberpunk(metrics)
     elif theme == "simple":
         img = renderer.render_simple(metrics)
+    elif theme == "bignum":
+        img = renderer.render_bignum(metrics)
     else:
         img = renderer.render_dual_gauge(metrics)
         
@@ -72,6 +74,8 @@ def run_monitor(dev: ChioneDevice, theme: str = "dual", interval: float = 1.0):
             frame = renderer.render_cyberpunk(metrics)
         elif theme == "simple":
             frame = renderer.render_simple(metrics)
+        elif theme == "bignum":
+            frame = renderer.render_bignum(metrics)
         else:
             frame = renderer.render_dual_gauge(metrics)
 
@@ -119,7 +123,7 @@ def main():
     parser.add_argument("--test", action="store_true", help="Test device connection and communication")
     parser.add_argument("--brightness", type=int, choices=range(1, 9), help="Set brightness (1 to 8)")
     parser.add_argument("--rotate", type=int, choices=[0, 90, 180, 270], help="Set orientation (0, 90, 180, 270 deg)")
-    parser.add_argument("--theme", choices=["dual", "cyberpunk", "simple"], default="dual", help="Monitor dashboard theme")
+    parser.add_argument("--theme", choices=["dual", "cyberpunk", "simple", "bignum"], default="dual", help="Monitor dashboard theme")
     parser.add_argument("--image", type=str, help="Display a static image (PNG/JPG)")
     parser.add_argument("--gif", type=str, help="Play an animated GIF")
     parser.add_argument("--interval", type=float, default=1.0, help="Refresh interval in seconds (default: 1.0)")
