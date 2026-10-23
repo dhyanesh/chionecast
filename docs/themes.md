@@ -118,7 +118,7 @@ This document catalogs all built-in display themes and customization options ava
 
 ---
 
-### 6. Cyberpunk Concentric Neon (`--theme cyberpunk`)
+### 8. Cyberpunk Concentric Neon (`--theme cyberpunk`)
 * **Type:** Native Procedural Vector Theme
 * **Visual Style:** Concentric neon rings inspired by futuristic synthwave UI.
 * **Layout:**
@@ -135,7 +135,7 @@ This document catalogs all built-in display themes and customization options ava
 
 ---
 
-### 7. Big Number Sweep (`--theme bignum`)
+### 9. Big Number Sweep (`--theme bignum`)
 * **Type:** Native Procedural Vector Theme
 * **Visual Style:** Dominant massive central percentage with a 270° tachometer arc gauge.
 * **Layout:**
@@ -151,7 +151,7 @@ This document catalogs all built-in display themes and customization options ava
 
 ---
 
-### 8. Simple Minimalist (`--theme simple`)
+### 10. Simple Minimalist (`--theme simple`)
 * **Type:** Native Procedural Vector Theme
 * **Visual Style:** Clean card interface with subtle perimeter boundary.
 * **Layout:**
