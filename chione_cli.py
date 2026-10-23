@@ -8,6 +8,7 @@ import sys
 import time
 import argparse
 import signal
+import threading
 from typing import Optional
 from PIL import Image, ImageSequence
 
@@ -18,12 +19,14 @@ from config_manager import AppConfig, load_config, save_config, print_config, ge
 
 
 running = True
+shutdown_event = threading.Event()
 
 
 def signal_handler(sig, frame):
     global running
-    print("\nStopping display daemon...")
+    print("\nStopping display daemon...", flush=True)
     running = False
+    shutdown_event.set()
 
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -134,8 +137,8 @@ def run_monitor(dev: ChioneDevice, config: AppConfig):
     frame_idx = 0
     num_frames = len(frames)
 
-    while running:
-        now = time.time()
+    while running and not shutdown_event.is_set():
+        now = time.monotonic()
         # Refresh metrics if interval has passed
         if now - last_metric_time >= interval:
             metrics = collector.get_metrics()
@@ -186,10 +189,10 @@ def run_monitor(dev: ChioneDevice, config: AppConfig):
             )
 
         try:
-            t_send_start = time.time()
+            t_send_start = time.monotonic()
             dev.display_image(frame)
             frame_count += 1
-            send_duration = time.time() - t_send_start
+            send_duration = time.monotonic() - t_send_start
 
             if frame_count % 30 == 1 or not is_overlay_theme or num_frames <= 1:
                 p_label, p_val, p_sub, _ = metrics.get_metric_data(primary, unit)
@@ -197,19 +200,19 @@ def run_monitor(dev: ChioneDevice, config: AppConfig):
                 if secondary not in ("none", "", None):
                     s_label, s_val, s_sub, _ = metrics.get_metric_data(secondary, unit)
                     sec_part = f" | {s_label} {s_val:.0f}% ({s_sub})"
-                print(f"Frame {frame_count} sent | {p_label} {p_val:.0f}% ({p_sub}){sec_part} | RAM {metrics.ram_percent:.0f}%")
+                print(f"Frame {frame_count} sent | {p_label} {p_val:.0f}% ({p_sub}){sec_part} | RAM {metrics.ram_percent:.0f}%", flush=True)
         except Exception as e:
-            print(f"Error streaming frame: {e}")
+            print(f"Error streaming frame: {e}", flush=True)
             break
 
         # Sleep handling:
         # If animated (multiple frames), target ~25 FPS (~0.040s per frame)
         if is_overlay_theme and num_frames > 1:
             frame_target = 0.040
-            sleep_time = max(0.001, frame_target - send_duration)
-            time.sleep(sleep_time)
+            sleep_time = max(0.001, min(frame_target, frame_target - send_duration))
+            shutdown_event.wait(timeout=sleep_time)
         else:
-            time.sleep(interval)
+            shutdown_event.wait(timeout=interval)
 
     collector.close()
 

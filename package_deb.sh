@@ -36,7 +36,7 @@ fi
 # 2. Launcher script in /usr/bin/chionecast
 cat << 'EOF' > "${BUILD_DIR}/usr/bin/chionecast"
 #!/bin/sh
-exec /usr/bin/python3 /usr/lib/chionecast/chione_cli.py "$@"
+exec /usr/bin/python3 -u /usr/lib/chionecast/chione_cli.py "$@"
 EOF
 chmod 755 "${BUILD_DIR}/usr/bin/chionecast"
 
