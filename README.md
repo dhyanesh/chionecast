@@ -27,18 +27,24 @@ Native Linux driver, telemetry monitor, and customization tool for the **GAMDIAS
 
 ## Installation & Distribution for Ubuntu / Debian
 
-### Option A: Install via Debian Package (.deb)
+### Option A: Install via Official GitHub Release (.deb)
 ```bash
-# Build the .deb package
-make deb
+# 1. Download the latest .deb package
+curl -sLO https://github.com/dhyanesh/chionecast/releases/download/v1.0.0/chionecast_1.0.0_all.deb
 
-# Install the package (automatically installs udev rules and systemd service)
-sudo apt install ./chionecast_1.0.0_all.deb
+# 2. Install the package
+sudo apt install -y ./chionecast_1.0.0_all.deb
+
+# 3. Reload udev rules for non-root USB access
+sudo udevadm control --reload-rules && sudo udevadm trigger
+
+# 4. (Optional) Enable auto-start on desktop login
+systemctl --user enable --now chionecast
 ```
 
 Once installed, `chionecast` is available system-wide:
 ```bash
-chionecast --rotate 180 --theme dual
+chionecast --rotate 180 --theme neon --primary gpu
 ```
 
 ### Option B: Quick Setup from Source
