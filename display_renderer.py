@@ -345,18 +345,18 @@ class DisplayRenderer:
                 draw.arc([cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid], start=-90, end=-90 + s_angle, fill=(0, 255, 230), width=5)
 
             # Center Top: Primary Usage % (Large) + Subtitle (Small)
-            draw.text((cx - 36, 48), f"{p_label} LOAD", fill=(255, 0, 128), font=self.font_tiny)
+            draw.text((cx - 36, 48), p_label, fill=(255, 0, 128), font=self.font_tiny)
             draw.text((cx - 30, 62), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
             draw.text((cx - 24, 98), p_sub, fill=(180, 140, 160), font=self.font_tiny)
 
             # Center Bottom: Secondary Usage % (Large) + Subtitle (Small)
-            draw.text((cx - 36, 122), f"{s_label} LOAD", fill=(0, 255, 230), font=self.font_tiny)
+            draw.text((cx - 36, 122), s_label, fill=(0, 255, 230), font=self.font_tiny)
             draw.text((cx - 30, 136), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
             draw.text((cx - 24, 172), s_sub, fill=(140, 180, 180), font=self.font_tiny)
         else:
             # Single Centered Readout
-            t_box = draw.textbbox((0, 0), f"{p_label} LOAD", font=self.font_small)
-            draw.text((cx - (t_box[2] - t_box[0]) // 2, 60), f"{p_label} LOAD", fill=(255, 0, 128), font=self.font_small)
+            t_box = draw.textbbox((0, 0), p_label, font=self.font_small)
+            draw.text((cx - (t_box[2] - t_box[0]) // 2, 60), p_label, fill=(255, 0, 128), font=self.font_small)
 
             val_str = f"{p_val:.0f}%"
             v_box = draw.textbbox((0, 0), val_str, font=self.font_giant)
@@ -401,7 +401,7 @@ class DisplayRenderer:
 
         if has_secondary:
             # Top section: Primary Metric
-            draw.text((42, 38), f"{p_label} LOAD", fill=p_col, font=self.font_small)
+            draw.text((42, 38), p_label, fill=p_col, font=self.font_small)
             draw.text((42, 58), f"{p_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
             draw.text((136, 70), p_sub, fill=(150, 160, 180), font=self.font_small)
 
@@ -409,13 +409,13 @@ class DisplayRenderer:
             draw.line([40, 118, WIDTH - 40, 118], fill=(45, 50, 68), width=1)
 
             # Bottom section: Secondary Metric
-            draw.text((42, 128), f"{s_label} LOAD", fill=s_col, font=self.font_small)
+            draw.text((42, 128), s_label, fill=s_col, font=self.font_small)
             draw.text((42, 148), f"{s_val:.0f}%", fill=(255, 255, 255), font=self.font_large)
             draw.text((136, 160), s_sub, fill=(150, 160, 180), font=self.font_small)
         else:
             # Centered Single Card
-            t_box = draw.textbbox((0, 0), f"{p_label} LOAD", font=self.font_medium)
-            draw.text((cx - (t_box[2] - t_box[0]) // 2, 52), f"{p_label} LOAD", fill=p_col, font=self.font_medium)
+            t_box = draw.textbbox((0, 0), p_label, font=self.font_medium)
+            draw.text((cx - (t_box[2] - t_box[0]) // 2, 52), p_label, fill=p_col, font=self.font_medium)
 
             val_str = f"{p_val:.0f}%"
             v_box = draw.textbbox((0, 0), val_str, font=self.font_giant)
@@ -474,10 +474,10 @@ class DisplayRenderer:
             draw.arc(bbox, start=135, end=135 + sweep_angle, fill=gauge_color, width=9)
 
         # Title at top
-        title = f"{p_label} UTILIZATION"
-        t_bbox = draw.textbbox((0, 0), title, font=self.font_tiny)
+        title = p_label
+        t_bbox = draw.textbbox((0, 0), title, font=self.font_small)
         t_w = t_bbox[2] - t_bbox[0]
-        draw.text((cx - t_w // 2, 40), title, fill=p_col, font=self.font_tiny)
+        draw.text((cx - t_w // 2, 40), title, fill=p_col, font=self.font_small)
 
         # Giant number in center
         val_str = f"{p_val:.0f}"
