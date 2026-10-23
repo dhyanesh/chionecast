@@ -14,9 +14,11 @@ HEIGHT = 240
 
 OFFICIAL_THEMES = {
     "reactor": "official/animations/official_anim_2.gif",
-    "vortex": "official/animations/official_anim_1.gif",
+    "vortex": "official/animations/cgif.gif",
     "hud": "official/animations/cgif.gif",
     "ring": "official/backgrounds/preset_0.png",
+    "neon": "official/backgrounds/cgif1_bg.png",
+    "neon-flow": "official/animations/official_anim_1.gif",
 }
 
 
@@ -39,13 +41,13 @@ def find_asset(rel_path: str) -> Optional[str]:
 
 def _get_font(size: int):
     """
-    Attempts to load a standard TrueType font (DejaVuSans, Ubuntu, Liberation),
+    Attempts to load a standard TrueType font (Liberation, Ubuntu, DejaVu),
     falling back to PIL default font.
     """
     font_paths = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     ]
     for p in font_paths:
@@ -221,6 +223,49 @@ class DisplayRenderer:
             draw.text((102, 175), now, fill=(255, 255, 255), font=f_small)
 
         return Image.alpha_composite(bg, overlay).convert("RGB")
+
+    def render_neon_ring(
+        self,
+        bg_image: Image.Image,
+        metrics: SystemMetrics,
+        primary_metric: str = "gpu",
+        temp_unit: str = "C",
+    ) -> Image.Image:
+        """
+        Renders the authentic GAMDIAS single-metric neon ring theme.
+        Matches the official Windows application layout (Grid_CPUID):
+        - Top: Metric label (e.g. "GPU" or "CPU")
+        - Center: Value formatted with 1 decimal place (e.g. "4.0")
+        - Bottom: Unit symbol (e.g. "%")
+        """
+        p_label, p_val, p_sub, _ = metrics.get_metric_data(primary_metric, temp_unit)
+        bg = bg_image.convert("RGBA") if bg_image.mode != "RGBA" else bg_image.copy()
+        if bg.size != (WIDTH, HEIGHT):
+            bg = bg.resize((WIDTH, HEIGHT), Image.Resampling.LANCZOS)
+
+        draw = ImageDraw.Draw(bg)
+        cx = WIDTH // 2
+
+        # Title: "GPU" or "CPU" (Bold, 26px, centered at Y=44)
+        f_title = _get_font(26)
+        t_box = draw.textbbox((0, 0), p_label, font=f_title)
+        tw = t_box[2] - t_box[0]
+        draw.text((cx - tw // 2, 44), p_label, fill=(255, 255, 255), font=f_title)
+
+        # Primary Value: e.g. "4.0" (Large bold, 62px, centered at Y=78)
+        f_num = _get_font(62)
+        val_str = f"{p_val:.1f}"
+        v_box = draw.textbbox((0, 0), val_str, font=f_num)
+        vw = v_box[2] - v_box[0]
+        draw.text((cx - vw // 2, 78), val_str, fill=(255, 255, 255), font=f_num)
+
+        # Unit: "%" (Bold, 24px, centered at Y=154)
+        f_unit = _get_font(24)
+        u_box = draw.textbbox((0, 0), "%", font=f_unit)
+        uw = u_box[2] - u_box[0]
+        draw.text((cx - uw // 2, 154), "%", fill=(255, 255, 255), font=f_unit)
+
+        return bg.convert("RGB")
 
     def render_dual_gauge(
         self,

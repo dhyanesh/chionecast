@@ -43,7 +43,7 @@ def test_device(dev: ChioneDevice):
     print("Device communication verified.")
 
 
-THEMES = ["dual", "cyberpunk", "simple", "bignum", "reactor", "vortex", "hud", "ring"]
+THEMES = ["dual", "cyberpunk", "simple", "bignum", "reactor", "vortex", "hud", "ring", "neon", "neon-flow"]
 METRIC_CHOICES = ["cpu", "gpu", "ram", "vram", "none"]
 
 
@@ -60,7 +60,15 @@ def save_snapshot(
     renderer = DisplayRenderer()
     metrics = collector.get_metrics()
 
-    if theme in ["reactor", "vortex", "hud", "ring"] or custom_bg:
+    if theme in ["neon", "neon-flow"]:
+        frames = renderer.load_theme_frames(theme, custom_bg=custom_bg)
+        img = renderer.render_neon_ring(
+            frames[0],
+            metrics,
+            primary_metric=primary,
+            temp_unit=unit,
+        )
+    elif theme in ["reactor", "vortex", "hud", "ring"] or custom_bg:
         frames = renderer.load_theme_frames(theme, custom_bg=custom_bg)
         img = renderer.render_hud_overlay(
             frames[0],
@@ -124,7 +132,8 @@ def run_monitor(dev: ChioneDevice, config: AppConfig):
     print(f"  Metrics: Primary={primary.upper()}, Secondary={secondary.upper()}, Aux={aux.upper()} (Unit: °{unit.upper()})")
 
     # Check if this is an overlay/animated theme
-    is_overlay_theme = theme in ["reactor", "vortex", "hud", "ring"] or custom_bg is not None
+    is_neon_theme = theme in ["neon", "neon-flow"]
+    is_overlay_theme = is_neon_theme or theme in ["reactor", "vortex", "hud", "ring"] or custom_bg is not None
     frames = []
     if is_overlay_theme:
         frames = renderer.load_theme_frames(theme, custom_bg=custom_bg)
@@ -144,7 +153,16 @@ def run_monitor(dev: ChioneDevice, config: AppConfig):
             metrics = collector.get_metrics()
             last_metric_time = now
 
-        if is_overlay_theme and num_frames > 0:
+        if is_neon_theme and num_frames > 0:
+            bg_frame = frames[frame_idx % num_frames]
+            frame = renderer.render_neon_ring(
+                bg_frame,
+                metrics,
+                primary_metric=primary,
+                temp_unit=unit,
+            )
+            frame_idx += 1
+        elif is_overlay_theme and num_frames > 0:
             bg_frame = frames[frame_idx % num_frames]
             frame = renderer.render_hud_overlay(
                 bg_frame,

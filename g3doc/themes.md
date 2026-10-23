@@ -75,7 +75,34 @@ This document catalogs all built-in display themes and customization options ava
 
 ---
 
-### 5. Dual Gauge Tachometer (`--theme dual`)
+### 5. Authentic Neon Ring (`--theme neon`)
+* **Type:** Official Vendor Static / Single-Metric Theme (240×240)
+* **Visual Style:** Exact replica of the official GAMDIAS Windows software single-metric display (`cgif1_bg.png`). Glowing blue-to-purple neon circular ring around a pitch-black aperture.
+* **Layout:**
+  - **Top:** Metric label (`GPU` or `CPU`) in bold white uppercase (`26px`).
+  - **Center:** Massive bold white percentage formatted with 1 decimal place (`4.0`, `62px`).
+  - **Bottom:** Centered `%` symbol in bold white (`24px`).
+* **CLI Command:**
+  ```bash
+  chionecast --rotate 180 --theme neon --primary gpu
+  ```
+
+![Neon Ring Theme](images/snapshot_theme_neon.png)
+
+---
+
+### 6. Flowing Neon Ring (`--theme neon-flow`)
+* **Type:** Official Vendor Animated Theme (64 frames, ~25 FPS)
+* **Visual Style:** The authentic neon ring smoothly cycling its gradient colors (cyan, blue, magenta, purple) around the circumference.
+* **Layout:** Same clean, single-metric layout as `neon`.
+* **CLI Command:**
+  ```bash
+  chionecast --rotate 180 --theme neon-flow --primary gpu
+  ```
+
+---
+
+### 7. Dual Gauge Tachometer (`--theme dual`)
 * **Type:** Native Procedural Vector Theme (Default)
 * **Visual Style:** Clean dual tachometer arcs on deep obsidian background.
 * **Layout:**
@@ -163,50 +190,13 @@ chionecast --rotate 180 --bg /path/to/custom_wallpaper.png
 | `vortex` | Animated | 64-frame fluid energy swirl | `chionecast --theme vortex` |
 | `hud` | Animated | 160-frame spinning circular gauge | `chionecast --theme hud` |
 | `ring` | Static | Official golden tech ring | `chionecast --theme ring` |
+| `neon` | Static | Authentic blue-purple neon ring (single metric) | `chionecast --theme neon` |
+| `neon-flow`| Animated | 64-frame cycling neon gradient ring | `chionecast --theme neon-flow` |
 | `dual` | Vector | Dual electric tachometer arcs | `chionecast --theme dual` |
 | `cyberpunk`| Vector | Concentric neon magenta/cyan rings | `chionecast --theme cyberpunk` |
 | `bignum` | Vector | Massive 60px number + 270° arc | `chionecast --theme bignum` |
 | `simple` | Vector | Minimalist two-card dashboard | `chionecast --theme simple` |
 | *Custom* | User GIF/PNG | Frosted telemetry over user media | `chionecast --bg <file>` |
-
----
-
-## Independent Metric Configuration
-
-Telemetry metric selection is completely decoupled from visual themes. Any metric can be assigned to any slot:
-
-| Flag | Supported Values | Default | Visual Mapping |
-|---|---|---|---|
-| `--primary` | `cpu`, `gpu`, `ram`, `vram` | `cpu` | Left card / Outer neon ring / Big number tachometer |
-| `--secondary` | `cpu`, `gpu`, `ram`, `vram`, `none` | `gpu` | Right card / Inner neon ring (or `none` for centered single-metric mode) |
-| `--aux` | `ram`, `vram`, `none` | `ram` | Bottom status pill badge |
-| `--unit` | `C`, `F` | `C` | Temperature readout unit (°C / °F) |
-
-### Single-Metric Mode (`--secondary none`)
-To show only one metric without a secondary card/ring, pass `--secondary none`. Themes dynamically re-layout to display a centered, enlarged single-metric card or arc:
-
-```bash
-# Centered single card on animated Reactor theme
-chionecast --theme reactor --primary cpu --secondary none
-
-# Centered single 220° sweep tachometer on Dual Gauge theme
-chionecast --theme dual --primary gpu --secondary none
-```
-
-### Examples:
-```bash
-# Monitor GPU as primary and CPU as secondary on Reactor theme
-chionecast --theme reactor --primary gpu --secondary cpu
-
-# Monitor CPU and System RAM on Dual Gauge theme
-chionecast --theme dual --primary cpu --secondary ram
-
-# Monitor GPU load in Big Number theme
-chionecast --theme bignum --primary gpu
-
-# Save chosen metrics and theme to persistent configuration (~/.config/chionecast/config.json)
-chionecast --theme reactor --primary gpu --secondary none --save-config --config-only
-```
 
 ---
 
