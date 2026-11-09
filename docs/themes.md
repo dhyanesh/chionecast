@@ -26,7 +26,9 @@ This document catalogs all built-in display themes and customization options ava
   chionecast --rotate 180 --theme reactor
   ```
 
-![Reactor Theme](images/snapshot_theme_reactor.png)
+| Animated Preview | Static Snapshot |
+| :---: | :---: |
+| ![Reactor Animated Preview](images/preview_reactor.gif) | ![Reactor Theme](images/snapshot_theme_reactor.png) |
 
 ---
 
@@ -41,7 +43,9 @@ This document catalogs all built-in display themes and customization options ava
   chionecast --rotate 180 --theme vortex
   ```
 
-![Vortex Theme](images/snapshot_theme_vortex.png)
+| Animated Preview | Static Snapshot |
+| :---: | :---: |
+| ![Vortex Animated Preview](images/preview_vortex.gif) | ![Vortex Theme](images/snapshot_theme_vortex.png) |
 
 ---
 
@@ -56,7 +60,9 @@ This document catalogs all built-in display themes and customization options ava
   chionecast --rotate 180 --theme hud
   ```
 
-![Futuristic HUD Theme](images/snapshot_theme_hud.png)
+| Animated Preview | Static Snapshot |
+| :---: | :---: |
+| ![Futuristic HUD Animated Preview](images/preview_hud.gif) | ![Futuristic HUD Theme](images/snapshot_theme_hud.png) |
 
 ---
 
@@ -99,6 +105,10 @@ This document catalogs all built-in display themes and customization options ava
   ```bash
   chionecast --rotate 180 --theme neon-flow --primary gpu
   ```
+
+| Animated Preview | Static Snapshot |
+| :---: | :---: |
+| ![Flowing Neon Ring Animated Preview](images/preview_neon_flow.gif) | ![Flowing Neon Ring Snapshot](images/snapshot_theme_neon_flow.png) |
 
 ---
 
@@ -179,6 +189,31 @@ chionecast --rotate 180 --bg /path/to/custom_animation.gif
 # Overlay telemetry onto a static wallpaper
 chionecast --rotate 180 --bg /path/to/custom_wallpaper.png
 ```
+
+---
+
+## Official Vendor Assets (GIFs & Backgrounds)
+
+CHIONECAST bundles the original raw animation GIFs and static background PNGs extracted from the GAMDIAS AEOLUS Box software in `assets/official/`.
+
+### Raw Vendor Animations (`../assets/official/animations/`)
+
+| Preview | File | Frames | Description |
+| :---: | :--- | :---: | :--- |
+| ![official_anim_1.gif](../assets/official/animations/official_anim_1.gif) | `../assets/official/animations/official_anim_1.gif` | 64 | Flowing neon gradient ring (`neon-flow` backdrop) |
+| ![official_anim_2.gif](../assets/official/animations/official_anim_2.gif) | `../assets/official/animations/official_anim_2.gif` | 160 | Pulsing cyan-blue reactor ring (`reactor` backdrop) |
+| ![cgif.gif](../assets/official/animations/cgif.gif) | `../assets/official/animations/cgif.gif` | 160 | Rotating circular HUD & vortex animation (`vortex` / `hud` backdrop) |
+
+### Raw Vendor Backgrounds (`../assets/official/backgrounds/`)
+
+| Preview | File | Description |
+| :---: | :--- | :--- |
+| ![preset_0.png](../assets/official/backgrounds/preset_0.png) | `../assets/official/backgrounds/preset_0.png` | Golden tech ring (`ring` backdrop) |
+| ![preset_1.png](../assets/official/backgrounds/preset_1.png) | `../assets/official/backgrounds/preset_1.png` | Dark minimalist circular border preset |
+| ![cgif1_bg.png](../assets/official/backgrounds/cgif1_bg.png) | `../assets/official/backgrounds/cgif1_bg.png` | Blue-purple neon ring (`neon` backdrop) |
+| ![cgif2_bg.png](../assets/official/backgrounds/cgif2_bg.png) | `../assets/official/backgrounds/cgif2_bg.png` | Static cyan reactor ring |
+| ![cgif_bg.png](../assets/official/backgrounds/cgif_bg.png) | `../assets/official/backgrounds/cgif_bg.png` | Static circular HUD ring |
+| ![cimg.png](../assets/official/backgrounds/cimg.png) | `../assets/official/backgrounds/cimg.png` | Default custom image backdrop |
 
 ---
 

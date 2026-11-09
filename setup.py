@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
     name="chionecast",
-    version="1.0.0",
+    version="1.1.0",
     description="Native Linux driver, telemetry monitor, and display tool for the GAMDIAS CHIONE P3 AIO liquid cooler",
     author="Dhyanesh Damania",
     url="https://github.com/dhyanesh/chionecast",

@@ -268,7 +268,7 @@ def main():
     parser.add_argument(
         "--theme",
         choices=THEMES,
-        help="Monitor theme: dual, cyberpunk, simple, bignum, reactor (animated), vortex (animated), hud (animated), ring",
+        help="Monitor theme: dual, cyberpunk, simple, bignum, reactor (animated), vortex (animated), hud (animated), ring, neon, neon-flow (animated)",
     )
     parser.add_argument("--primary", choices=METRIC_CHOICES, help="Primary metric (left/top slot): cpu, gpu, ram, vram")
     parser.add_argument("--secondary", choices=METRIC_CHOICES, help="Secondary metric (right/bottom slot): cpu, gpu, ram, vram")

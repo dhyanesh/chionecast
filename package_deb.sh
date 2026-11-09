@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERSION="1.0.0"
+VERSION="1.1.0"
 PKG_NAME="chionecast"
 ARCH="all"
 BUILD_DIR="${SCRIPT_DIR}/build/deb/${PKG_NAME}_${VERSION}_${ARCH}"
@@ -64,7 +64,7 @@ Priority: optional
 Architecture: ${ARCH}
 Maintainer: Dhyanesh Damania <https://github.com/dhyanesh/chionecast>
 Depends: python3 (>= 3.8), python3-pil, python3-psutil, python3-hid | python3-hidapi
-Recommends: python3-pip
+Recommends: python3-pynvml, python3-pip
 Description: Native Linux driver and telemetry monitor for GAMDIAS CHIONE P3 AIO cooler
  CHIONECAST is a native Linux driver, system telemetry display, and
  customization tool for the GAMDIAS CHIONE P3 AIO liquid CPU cooler series

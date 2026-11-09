@@ -11,6 +11,8 @@ Native Linux driver, telemetry monitor, and customization tool for the **GAMDIAS
   - `vortex`: **(Official Animation)** 64-frame fluid swirl vortex with high-contrast readouts.
   - `hud`: **(Official Animation)** 160-frame spinning circular gauge HUD animation.
   - `ring`: **(Official Background)** GAMDIAS CHIONE P3 golden tech ring background (`preset_0.png`).
+  - `neon`: **(Official Background)** Authentic GAMDIAS single-metric glowing blue-purple neon ring (`cgif1_bg.png`).
+  - `neon-flow`: **(Official Animation)** 64-frame cycling neon gradient ring with single-metric readout (`official_anim_1.gif`).
   - `dual`: Dual arc gauges with real-time temperature, load, clock, and RAM info (large % readout).
   - `cyberpunk`: Concentric neon rings for CPU and GPU with high-contrast readouts.
   - `bignum`: Dominant large single-number readout (CPU or GPU %) with a 270° tachometer arc gauge.
@@ -25,15 +27,57 @@ Native Linux driver, telemetry monitor, and customization tool for the **GAMDIAS
 
 ---
 
+## Visual Theme Gallery
+
+| Preview | Theme | Type | Description | CLI Command |
+| :---: | :---: | :---: | :--- | :--- |
+| ![Reactor](docs/images/preview_reactor.gif) | `reactor` | Official Animated | 160-frame pulsing cyan-blue reactor ring with dual frosted telemetry cards | `chionecast --theme reactor` |
+| ![Vortex](docs/images/preview_vortex.gif) | `vortex` | Official Animated | Fluid energy vortex swirl animation with high-contrast CPU & GPU readouts | `chionecast --theme vortex` |
+| ![HUD](docs/images/preview_hud.gif) | `hud` | Official Animated | Spinning circular gauge HUD animation with dual telemetry overlay | `chionecast --theme hud` |
+| ![Golden Ring](assets/previews/snapshot_theme_ring.png) | `ring` | Official Static | Authentic GAMDIAS CHIONE P3 golden tech ring backdrop (`preset_0.png`) | `chionecast --theme ring` |
+| ![Neon Ring](assets/previews/snapshot_theme_neon.png) | `neon` | Official Static | Exact replica of the official GAMDIAS single-metric blue-purple neon ring (`cgif1_bg.png`) | `chionecast --theme neon --primary gpu` |
+| ![Neon Flow](docs/images/preview_neon_flow.gif) | `neon-flow` | Official Animated | 64-frame smoothly cycling neon gradient ring with single-metric readout (`official_anim_1.gif`) | `chionecast --theme neon-flow --primary gpu` |
+| ![Dual Gauge](assets/previews/snapshot_theme_dual.png) | `dual` | Procedural Vector | Dual electric tachometer sweep arcs for CPU & GPU with clock and RAM | `chionecast --theme dual` |
+| ![Cyberpunk](assets/previews/snapshot_theme_cyberpunk.png) | `cyberpunk` | Procedural Vector | Concentric neon magenta and cyan progress rings with stacked readouts | `chionecast --theme cyberpunk` |
+| ![Big Number](assets/previews/snapshot_theme_bignum.png) | `bignum` | Procedural Vector | Dominant massive 60px central percentage with a 270° color-adapting tachometer arc | `chionecast --theme bignum` |
+| ![Simple](assets/previews/snapshot_theme_simple.png) | `simple` | Procedural Vector | Clean minimalist two-card dashboard with subtle circular border | `chionecast --theme simple` |
+
+---
+
+## Official Vendor GIF & Background Assets
+
+All original GAMDIAS AEOLUS Box animations and background assets are included in `assets/official/` and can be used directly via built-in themes or passed to `--bg` / `--gif` / `--image`:
+
+### Official Animated GIFs (`assets/official/animations/`)
+
+| Preview | Asset Path | Frames | Used By Theme / Description |
+| :---: | :--- | :---: | :--- |
+| ![official_anim_1.gif](assets/official/animations/official_anim_1.gif) | `assets/official/animations/official_anim_1.gif` | 64 | `neon-flow` — Flowing neon gradient ring animation |
+| ![official_anim_2.gif](assets/official/animations/official_anim_2.gif) | `assets/official/animations/official_anim_2.gif` | 160 | `reactor` — Pulsing cyan/emerald reactor ring animation |
+| ![cgif.gif](assets/official/animations/cgif.gif) | `assets/official/animations/cgif.gif` | 160 | `vortex` / `hud` — Circular HUD & vortex animation |
+
+### Official Static Backgrounds (`assets/official/backgrounds/`)
+
+| Preview | Asset Path | Description |
+| :---: | :--- | :--- |
+| ![preset_0.png](assets/official/backgrounds/preset_0.png) | `assets/official/backgrounds/preset_0.png` | `ring` — Golden GAMDIAS tech ring |
+| ![preset_1.png](assets/official/backgrounds/preset_1.png) | `assets/official/backgrounds/preset_1.png` | Minimalist dark circular frame preset |
+| ![cgif1_bg.png](assets/official/backgrounds/cgif1_bg.png) | `assets/official/backgrounds/cgif1_bg.png` | `neon` — Static blue-to-purple neon ring backdrop |
+| ![cgif2_bg.png](assets/official/backgrounds/cgif2_bg.png) | `assets/official/backgrounds/cgif2_bg.png` | Cyan reactor ring static backdrop |
+| ![cgif_bg.png](assets/official/backgrounds/cgif_bg.png) | `assets/official/backgrounds/cgif_bg.png` | Circular gauge HUD static backdrop |
+| ![cimg.png](assets/official/backgrounds/cimg.png) | `assets/official/backgrounds/cimg.png` | Default custom image placeholder backdrop |
+
+---
+
 ## Installation & Distribution for Ubuntu / Debian
 
 ### Option A: Install via Official GitHub Release (.deb)
 ```bash
 # 1. Download the latest .deb package
-curl -sLO https://github.com/dhyanesh/chionecast/releases/download/v1.0.0/chionecast_1.0.0_all.deb
+curl -sLO https://github.com/dhyanesh/chionecast/releases/download/v1.1.0/chionecast_1.1.0_all.deb
 
 # 2. Install the package
-sudo apt install -y ./chionecast_1.0.0_all.deb
+sudo apt install -y ./chionecast_1.1.0_all.deb
 
 # 3. Reload udev rules for non-root USB access
 sudo udevadm control --reload-rules && sudo udevadm trigger
@@ -158,5 +202,5 @@ systemctl --user status chione-display.service
 ---
 
 ## Documentation
-- **[Display Themes Gallery & Reference (docs/themes.md)](file:///home/dhyanesh/dev/chionecast/docs/themes.md):** Full visual catalog of all 8 built-in themes, visual styles, and preview screenshots.
-- **[Reverse Engineering & Protocol Specification](file:///home/dhyanesh/dev/chionecast/REVERSE_ENGINEERING_AND_PROTOCOL.md):** Complete technical breakdown of the USB HID protocol, packet structures, checksum algorithms, and AEOLUS Box reverse engineering findings.
+- **[Display Themes Gallery & Reference (docs/themes.md)](docs/themes.md):** Full visual catalog of all 10 built-in themes, visual styles, and preview screenshots.
+- **[Reverse Engineering & Protocol Specification](REVERSE_ENGINEERING_AND_PROTOCOL.md):** Complete technical breakdown of the USB HID protocol, packet structures, checksum algorithms, and AEOLUS Box reverse engineering findings.

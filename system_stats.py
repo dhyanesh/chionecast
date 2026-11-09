@@ -3,16 +3,120 @@ system_stats.py - Real-time CPU, GPU, and memory telemetry reader for Linux.
 Supports Intel/AMD CPUs via psutil & hwmon, and NVIDIA GPUs via NVML.
 """
 
+import ctypes
 import os
 import psutil
 from dataclasses import dataclass
 from typing import Optional
 
+
+class _NvmlUtilization(ctypes.Structure):
+    _fields_ = [
+        ("gpu", ctypes.c_uint),
+        ("memory", ctypes.c_uint),
+    ]
+
+
+class _NvmlMemory(ctypes.Structure):
+    _fields_ = [
+        ("total", ctypes.c_ulonglong),
+        ("free", ctypes.c_ulonglong),
+        ("used", ctypes.c_ulonglong),
+    ]
+
+
+class _CtypesNVML:
+    """Zero-dependency ctypes fallback for NVIDIA NVML using libnvidia-ml.so.1."""
+
+    NVML_TEMPERATURE_GPU = 0
+
+    def __init__(self, lib=None):
+        self._lib = lib
+
+    def _ensure_lib(self):
+        if self._lib is None:
+            self._lib = ctypes.CDLL("libnvidia-ml.so.1")
+        return self._lib
+
+    @staticmethod
+    def _check(ret: int, func_name: str) -> None:
+        if ret != 0:
+            raise RuntimeError(f"{func_name} failed with NVML error code {ret}")
+
+    def nvmlInit_v2(self) -> None:
+        lib = self._ensure_lib()
+        fn = getattr(lib, "nvmlInit_v2", None) or getattr(lib, "nvmlInit")
+        self._check(fn(), "nvmlInit")
+
+    def nvmlInit(self) -> None:
+        self.nvmlInit_v2()
+
+    def nvmlShutdown(self) -> None:
+        lib = self._ensure_lib()
+        self._check(lib.nvmlShutdown(), "nvmlShutdown")
+
+    def nvmlDeviceGetHandleByIndex_v2(self, index: int) -> ctypes.c_void_p:
+        lib = self._ensure_lib()
+        fn = getattr(lib, "nvmlDeviceGetHandleByIndex_v2", None) or getattr(
+            lib, "nvmlDeviceGetHandleByIndex"
+        )
+        handle = ctypes.c_void_p()
+        self._check(
+            fn(ctypes.c_uint(index), ctypes.byref(handle)),
+            "nvmlDeviceGetHandleByIndex",
+        )
+        return handle
+
+    def nvmlDeviceGetHandleByIndex(self, index: int) -> ctypes.c_void_p:
+        return self.nvmlDeviceGetHandleByIndex_v2(index)
+
+    def nvmlDeviceGetName(self, handle: ctypes.c_void_p) -> str:
+        lib = self._ensure_lib()
+        buf = ctypes.create_string_buffer(96)
+        self._check(
+            lib.nvmlDeviceGetName(handle, buf, ctypes.c_uint(len(buf))),
+            "nvmlDeviceGetName",
+        )
+        return buf.value.decode("utf-8", errors="replace")
+
+    def nvmlDeviceGetUtilizationRates(self, handle: ctypes.c_void_p) -> _NvmlUtilization:
+        lib = self._ensure_lib()
+        util = _NvmlUtilization()
+        self._check(
+            lib.nvmlDeviceGetUtilizationRates(handle, ctypes.byref(util)),
+            "nvmlDeviceGetUtilizationRates",
+        )
+        return util
+
+    def nvmlDeviceGetTemperature(self, handle: ctypes.c_void_p, sensor_type: int = 0) -> int:
+        lib = self._ensure_lib()
+        temp = ctypes.c_uint()
+        self._check(
+            lib.nvmlDeviceGetTemperature(handle, ctypes.c_int(sensor_type), ctypes.byref(temp)),
+            "nvmlDeviceGetTemperature",
+        )
+        return int(temp.value)
+
+    def nvmlDeviceGetMemoryInfo(self, handle: ctypes.c_void_p) -> _NvmlMemory:
+        lib = self._ensure_lib()
+        mem = _NvmlMemory()
+        self._check(
+            lib.nvmlDeviceGetMemoryInfo(handle, ctypes.byref(mem)),
+            "nvmlDeviceGetMemoryInfo",
+        )
+        return mem
+
+
 try:
     import pynvml
     _NVML_AVAILABLE = True
-except ImportError:
-    _NVML_AVAILABLE = False
+except Exception:
+    try:
+        pynvml = _CtypesNVML(ctypes.CDLL("libnvidia-ml.so.1"))
+        _NVML_AVAILABLE = True
+    except OSError:
+        pynvml = _CtypesNVML()
+        _NVML_AVAILABLE = False
 
 
 @dataclass
